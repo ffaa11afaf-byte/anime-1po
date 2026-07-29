@@ -3,37 +3,254 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مشاهدة الأنمي</title>
+    <title>مشاهدة الأنمي - قائمة الحلقات</title>
     <style>
-        * { box-sizing: border-box; font-family: sans-serif; }
-        body { background: #121212; color: white; margin: 0; padding: 15px; text-align: center; }
-        h1 { font-size: 20px; color: #ff9800; margin-bottom: 15px; }
-        .player-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; background: #000; border-radius: 8px; }
+        * { box-sizing: border-box; font-family: sans-serif; text-decoration: none; }
+        body { background: #121212; color: white; margin: 0; padding: 10px; text-align: center; padding-bottom: 50px; }
+        
+        /* تنسيق عنوان وصورة الأنمي */
+        h1 { font-size: 1.5rem; color: #ff9800; margin: 10px 0; }
+        .anime-poster { width: 150px; height: 220px; border-radius: 8px; object-fit: cover; border: 2px solid #333; margin-bottom: 10px; }
+        
+        /* تنسيق مشغل الفيديو */
+        .player-box { background: #000; border-radius: 8px; overflow: hidden; margin-bottom: 15px; border: 1px solid #333; }
+        .player-container { position: relative; padding-bottom: 56.25%; height: 0; }
         .player-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
-        .episodes-list { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 20px; }
-        .ep-btn { background: #222; color: #fff; border: 1px solid #444; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-size: 14px; }
-        .ep-btn.active { background: #ff9800; color: #000; font-weight: bold; border-color: #ff9800; }
+        
+        /* تنسيق حاوية الحلقات وخيارات الجودة */
+        .ep-section { border: 1px solid #333; border-radius: 8px; background: #1a1a1a; padding: 10px; margin-bottom: 10px; }
+        .ep-title { font-weight: bold; color: #ff9800; margin-bottom: 8px; display: block; border-bottom: 1px solid #333; padding-bottom: 5px; }
+        .ep-links-container { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+        
+        /* تنسيق روابط الجودة كأزرار */
+        .quality-btn { display: inline-block; background: #333; color: #fff; padding: 8px 14px; border-radius: 20px; font-size: 0.85rem; cursor: pointer; transition: 0.2s; border: 1px solid transparent; }
+        .quality-btn:hover { background: #444; }
+        .quality-btn.active { background: #ff9800; color: #000; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <h1 id="animeTitle">مشاهدة الأنمي</h1>
+    <!-- رابط الصورة هنا: ضع رابط صورة الأنمي الحقيقية -->
+    <img src="https://cdn.myanimelist.net/images/anime/1328/142827.jpg" alt="بوستر الأنمي" class="anime-poster">
+    
+    <h1 id="animeTitle">اسم الأنمي</h1>
 
-    <div class="player-container">
-        <iframe id="videoPlayer" src="" allowfullscreen scrolling="no"></iframe>
+    <div class="player-box">
+        <div class="player-container">
+            <iframe id="videoPlayer" src="" allowfullscreen scrolling="no"></iframe>
+        </div>
     </div>
 
     <h3>قائمة الحلقات</h3>
-    <div class="episodes-list" id="episodesList"></div>
+    <div id="episodesList">
+        <!-- سيتم توليد الحلقات تلقائياً هنا -->
+    </div>
 
     <script>
-        // هنا تضع بيانات الأنمي وروابط Streamtape
+        // *** الجزء الأهم: بيانات الأنمي وروابط الحلقات ***
         const animeData = {
-            title: "اسم الأنمي",
+            title: "انمي Mushoku Tensei: Jobless Reincarnation Season 3",
             episodes: [
-                { ep: 1, embedUrl: "https://streamtape.com/e/مثال_رابط_الحلقة_الأولى" }
+                {
+                    ep: 1,
+                    servers: [
+                        { quality: "720p", embedUrl: "https://stape.me/e/a4z31607paTxGyy" }
+                    ]
+                },
+                {
+                    ep: 2,
+                    servers: [
+                        { quality: "720p", embedUrl: "https://stape.me/e/M7Y3wbp9MyUmkW3" },
+                        { quality: "1080p", embedUrl: "https://stape.me/e/KQe72O6MgqcaaJ" }
+                    ]
+                },
+                {
+                    ep: 3,
+                    servers: [
+                        { quality: "720p", embedUrl: "https://stape.me/e/p8RRb7RMv6hryJ8" },
+                        { quality: "1080p", embedUrl: "https://stape.me/e/GGea374dGBh11vx" }
+                    ]
+                },
+                {
+                    ep: 4,
+                    servers: [
+                        { quality: "720p", embedUrl: "https://stape.me/e/AppglQ1MbaSXR9y" },
+                        { quality: "1080p", embedUrl: "https://stape.me/e/dVgKBjbMQDTkXBA" }
+                    ]
+                },
+                {
+                    ep: 5,
+                    servers: [
+                        { quality: "720p", embedUrl: "https://stape.me/e/v29GxK2YQDc4gZl" },
+                        { quality: "1080p", embedUrl: "https://stape.me/e/Y1LdloX47jhvGbJ" }
+                    ]
+                }
             ]
         };
+
+        // تفعيل الكود وتوليد الواجهة
+        document.getElementById('animeTitle').innerText = animeData.title;
+        const listContainer = document.getElementById('episodesList');
+        const iframe = document.getElementById('videoPlayer');
+
+        function loadVideo(url, element) {
+            iframe.src = url;
+            // إزالة التفعيل عن باقي الأزرار
+            document.querySelectorAll('.quality-btn').forEach(btn => btn.classList.remove('active'));
+            // تفعيل الزر الحالي
+            element.classList.add('active');
+        }
+
+        // توليد قائمة الحلقات
+        animeData.episodes.forEach((episode, index) => {
+            const epSection = document.createElement('div');
+            epSection.className = 'ep-section';
+            
+            const epTitle = document.createElement('span');
+            epTitle.className = 'ep-title';
+            epTitle.innerText = `حلقة ${episode.ep}`;
+            epSection.appendChild(epTitle);
+
+            const linksContainer = document.createElement('div');
+            linksContainer.className = 'ep-links-container';
+            
+            episode.servers.forEach(server => {
+                const qualityBtn = document.createElement('a');
+                qualityBtn.className = 'quality-btn';
+                qualityBtn.innerText = server.quality;
+                qualityBtn.onclick = () => loadVideo(server.embedUrl, qualityBtn);
+                linksContainer.appendChild(qualityBtn);
+            });
+
+            epSection.appendChild(linksContainer);
+            listContainer.appendChild(epSection);
+
+            // تشغيل الحلقة الأولى، أول جودة تلقائياً عند الفتح
+            if (index === 0 && episode.servers.length > 0) {
+                // سنجد أول زر جودة تم إنشاؤه للتو
+                setTimeout(() => {
+                   loadVideo(episode.servers[0].embedUrl, linksContainer.firstChild);
+                }, 100);
+            }
+        });
+    </script>
+</body>
+</html>
+                        { quality: "720p", embedUrl: "ضع_رابط_إمبيد_حلقة4_720_هنا" },
+                        { quality: "1080p", embedUrl: "ضع_رابط_إمبيد_حلقة4_1080_هنا" }
+                    ]
+                },
+                {
+                    ep: 5,
+                    servers: [
+                        { quality: "720p", embedUrl: "ضع_رابط_إمبيد_حلقة5_720_هنا" },
+                        { quality: "1080p", embedUrl: "ضع_رابط_إمبيد_حلقة5_1080_هنا" }
+                    ]
+                }
+            ]
+        };
+
+        // تفعيل الكود وتوليد الواجهة
+        document.getElementById('animeTitle').innerText = animeData.title;
+        const listContainer = document.getElementById('episodesList');
+        const iframe = document.getElementById('videoPlayer');
+
+        function loadVideo(url, element) {
+            iframe.src = url;
+            // إزالة التفعيل عن باقي الأزرار
+            document.querySelectorAll('.quality-btn').forEach(btn => btn.classList.remove('active'));
+            // تفعيل الزر الحالي
+            element.classList.add('active');
+        }
+
+        // توليد قائمة الحلقات
+        animeData.episodes.forEach((episode, index) => {
+            const epSection = document.createElement('div');
+            epSection.className = 'ep-section';
+            
+            const epTitle = document.createElement('span');
+            epTitle.className = 'ep-title';
+            epTitle.innerText = `حلقة ${episode.ep}`;
+            epSection.appendChild(epTitle);
+
+            const linksContainer = document.createElement('div');
+            linksContainer.className = 'ep-links-container';
+            
+            episode.servers.forEach(server => {
+                const qualityBtn = document.createElement('a');
+                qualityBtn.className = 'quality-btn';
+                qualityBtn.innerText = server.quality;
+                qualityBtn.onclick = () => loadVideo(server.embedUrl, qualityBtn);
+                linksContainer.appendChild(qualityBtn);
+            });
+
+            epSection.appendChild(linksContainer);
+            listContainer.appendChild(epSection);
+
+            // تشغيل الحلقة الأولى، أول جودة تلقائياً عند الفتح
+            if (index === 0 && episode.servers.length > 0) {
+                // سنجد أول زر جودة تم إنشاؤه للتو
+                setTimeout(() => {
+                   loadVideo(episode.servers[0].embedUrl, linksContainer.firstChild);
+                }, 100);
+            }
+        });
+    </script>
+</body>
+</html>
+                    ]
+                }
+            ]
+        };
+
+        // تفعيل الكود وتوليد الواجهة
+        document.getElementById('animeTitle').innerText = animeData.title;
+        const listContainer = document.getElementById('episodesList');
+        const iframe = document.getElementById('videoPlayer');
+
+        function loadVideo(url, element) {
+            iframe.src = url;
+            // إزالة التفعيل عن باقي الأزرار
+            document.querySelectorAll('.quality-btn').forEach(btn => btn.classList.remove('active'));
+            // تفعيل الزر الحالي
+            element.classList.add('active');
+        }
+
+        // توليد قائمة الحلقات
+        animeData.episodes.forEach((episode, index) => {
+            const epSection = document.createElement('div');
+            epSection.className = 'ep-section';
+            
+            const epTitle = document.createElement('span');
+            epTitle.className = 'ep-title';
+            epTitle.innerText = `حلقة ${episode.ep}`;
+            epSection.appendChild(epTitle);
+
+            const linksContainer = document.createElement('div');
+            linksContainer.className = 'ep-links-container';
+            
+            episode.servers.forEach(server => {
+                const qualityBtn = document.createElement('a');
+                qualityBtn.className = 'quality-btn';
+                qualityBtn.innerText = server.quality;
+                qualityBtn.onclick = () => loadVideo(server.embedUrl, qualityBtn);
+                linksContainer.appendChild(qualityBtn);
+            });
+
+            epSection.appendChild(linksContainer);
+            listContainer.appendChild(epSection);
+
+            // تشغيل الحلقة الأولى، أول جودة تلقائياً عند الفتح
+            if (index === 0 && episode.servers.length > 0) {
+                // سنجد أول زر جودة تم إنشاؤه للتو
+                setTimeout(() => {
+                   loadVideo(episode.servers[0].embedUrl, linksContainer.firstChild);
+                }, 100);
+            }
+        });
+    </script>
+</body>
+</html>
 
         document.getElementById('animeTitle').innerText = animeData.title;
         const listContainer = document.getElementById('episodesList');
