@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مشاهدة الأنمي</title>
+    <style>
+        * { box-sizing: border-box; font-family: sans-serif; }
+        body { background: #121212; color: white; margin: 0; padding: 15px; text-align: center; }
+        h1 { font-size: 20px; color: #ff9800; margin-bottom: 15px; }
+        .player-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; background: #000; border-radius: 8px; }
+        .player-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
+        .episodes-list { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 20px; }
+        .ep-btn { background: #222; color: #fff; border: 1px solid #444; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-size: 14px; }
+        .ep-btn.active { background: #ff9800; color: #000; font-weight: bold; border-color: #ff9800; }
+    </style>
+</head>
+<body>
+
+    <h1 id="animeTitle">مشاهدة الأنمي</h1>
+
+    <div class="player-container">
+        <iframe id="videoPlayer" src="" allowfullscreen scrolling="no"></iframe>
+    </div>
+
+    <h3>قائمة الحلقات</h3>
+    <div class="episodes-list" id="episodesList"></div>
+
+    <script>
+        // هنا تضع بيانات الأنمي وروابط Streamtape
+        const animeData = {
+            title: "اسم الأنمي",
+            episodes: [
+                { ep: 1, embedUrl: "https://streamtape.com/e/مثال_رابط_الحلقة_الأولى" }
+            ]
+        };
+
+        document.getElementById('animeTitle').innerText = animeData.title;
+        const listContainer = document.getElementById('episodesList');
+        const iframe = document.getElementById('videoPlayer');
+
+        function loadEpisode(url, element) {
+            iframe.src = url;
+            document.querySelectorAll('.ep-btn').forEach(btn => btn.classList.remove('active'));
+            element.classList.add('active');
+        }
+
+        animeData.episodes.forEach((item, index) => {
+            const btn = document.createElement('button');
+            btn.className = 'ep-btn';
+            btn.innerText = `حلقة ${item.ep}`;
+            btn.onclick = () => loadEpisode(item.embedUrl, btn);
+            listContainer.appendChild(btn);
+
+            if (index === 0) loadEpisode(item.embedUrl, btn);
+        });
+    </script>
+</body>
+</html>
