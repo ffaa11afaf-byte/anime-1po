@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>قائمة الحلقات - Mushoku Tensei Season 3</title>
+    <style>
+        * { box-sizing: border-box; font-family: sans-serif; text-decoration: none; }
+        body { background: #121212; color: white; margin: 0; padding: 10px; text-align: center; padding-bottom: 50px; }
+        
+        .nav-bar { text-align: right; margin-bottom: 10px; }
+        .back-btn { color: #ff9800; font-size: 0.9rem; font-weight: bold; }
+        
+        h1 { font-size: 1.2rem; color: #ff9800; margin: 10px 0; }
+        
+        /* مشغل الفيديو */
+        .player-box { background: #000; border-radius: 8px; overflow: hidden; margin-bottom: 15px; border: 1px solid #333; }
+        .player-container { position: relative; padding-bottom: 56.25%; height: 0; }
+        .player-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
+        
+        /* قائمة الحلقات والجودة */
+        .ep-section { border: 1px solid #333; border-radius: 8px; background: #1a1a1a; padding: 10px; margin-bottom: 10px; }
+        .ep-title { font-weight: bold; color: #ff9800; margin-bottom: 8px; display: block; border-bottom: 1px solid #333; padding-bottom: 5px; }
+        .ep-links-container { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+        
+        .quality-btn { display: inline-block; background: #333; color: #fff; padding: 8px 14px; border-radius: 20px; font-size: 0.85rem; cursor: pointer; transition: 0.2s; border: 1px solid transparent; }
+        .quality-btn:hover { background: #444; }
+        .quality-btn.active { background: #ff9800; color: #000; font-weight: bold; }
+
+        /* العداد التنازلي */
+        .timer-card { border: 1px solid #ff9800; border-radius: 8px; background: #1a1500; padding: 15px; margin-top: 20px; }
+        .timer-title { color: #ff9800; font-size: 0.95rem; font-weight: bold; margin-bottom: 10px; }
+        .timer-display { display: flex; justify-content: center; gap: 10px; direction: ltr; }
+        .timer-unit { background: #222; border: 1px solid #444; padding: 8px; border-radius: 6px; min-width: 55px; }
+        .timer-num { font-size: 1.2rem; font-weight: bold; color: #fff; display: block; }
+        .timer-label { font-size: 0.7rem; color: #aaa; margin-top: 2px; display: block; }
+
+        footer { margin-top: 30px; font-size: 0.85rem; color: #888; }
+        footer a { color: #ff9800; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="nav-bar">
+        <a href="index.html" class="back-btn">➔ العودة للرئيسية</a>
+    </div>
+
+    <h1>اختر الحلقة والجودة للمشاهدة</h1>
+
+    <div class="player-box">
+        <div class="player-container">
+            <!-- المشغل فارغ في البداية لمنع التشغيل التلقائي -->
+            <iframe id="videoPlayer" src="" allowfullscreen scrolling="no"></iframe>
+        </div>
+    </div>
+
+    <h3>قائمة الحلقات</h3>
+    <div id="episodesList"></div>
+
+    <!-- العداد التنازلي -->
+    <div class="timer-card">
+        <div class="timer-title">موعد نزول الحلقة القادمة:</div>
+        <div class="timer-display" id="countdown">
+            <div class="timer-unit"><span class="timer-num" id="days">00</span><span class="timer-label">أيام</span></div>
+            <div class="timer-unit"><span class="timer-num" id="hours">00</span><span class="timer-label">ساعات</span></div>
+            <div class="timer-unit"><span class="timer-num" id="minutes">00</span><span class="timer-label">دقائق</span></div>
+            <div class="timer-unit"><span class="timer-num" id="seconds">00</span><span class="timer-label">ثواني</span></div>
+        </div>
+    </div>
+
+    <footer>
+        جميع الحقوق محفوظة © | <a href="https://t.me/anime_111PO" target="_blank">قناة التليكرام</a>
+    </footer>
+
+    <script>
+        const animeData = {
+            episodes: [
+                {
+                    ep: 1,
+                    servers: [
+                        { quality: "720p", embedUrl: "https://stape.me/e/a4z31607paTxGyy" }
+                    ]
+                },
+                {
+                    ep: 2,
+                    servers: [
+                        { quality: "720p", embedUrl: "https://stape.me/e/M7Y3wbp9MyUmkW3" },
+                        { quality: "1080p", embedUrl: "https://stape.me/e/KQe72O6MgqcaaJ" }
+                    ]
+                },
+                {
+                    ep: 3,
+                    servers: [
+                        { quality: "720p", embedUrl: "https://stape.me/e/p8RRb7RMv6hryJ8" },
+                        { quality: "1080p", embedUrl: "https://stape.me/e/GGea374dGBh11vx" }
+                    ]
+                },
+                {
+                    ep: 4,
+                    servers: [
+                        { quality: "720p", embedUrl: "https://stape.me/e/AppglQ1MbaSXR9y" },
+                        { quality: "1080p", embedUrl: "https://stape.me/e/dVgKBjbMQDTkXBA" }
+                    ]
+                },
+                {
+                    ep: 5,
+                    servers: [
+                        { quality: "720p", embedUrl: "https://stape.me/e/v29GxK2YQDc4gZl" },
+                        { quality: "1080p", embedUrl: "https://stape.me/e/Y1LdloX47jhvGbJ" }
+                    ]
+                }
+            ]
+        };
+
+        const listContainer = document.getElementById('episodesList');
+        const iframe = document.getElementById('videoPlayer');
+
+        function loadVideo(url, element) {
+            iframe.src = url;
+            document.querySelectorAll('.quality-btn').forEach(btn => btn.classList.remove('active'));
+            element.classList.add('active');
+        }
+
+        // توليد الحلقات والأزرار دون تشغيل تلقائي
+        animeData.episodes.forEach((episode) => {
+            const epSection = document.createElement('div');
+            epSection.className = 'ep-section';
+            
+            const epTitle = document.createElement('span');
+            epTitle.className = 'ep-title';
+            epTitle.innerText = `حلقة ${episode.ep}`;
+            epSection.appendChild(epTitle);
+
+            const linksContainer = document.createElement('div');
+            linksContainer.className = 'ep-links-container';
+            
+            episode.servers.forEach(server => {
+                const qualityBtn = document.createElement('a');
+                qualityBtn.className = 'quality-btn';
+                qualityBtn.innerText = server.quality;
+                qualityBtn.onclick = () => loadVideo(server.embedUrl, qualityBtn);
+                linksContainer.appendChild(qualityBtn);
+            });
+
+            epSection.appendChild(linksContainer);
+            listContainer.appendChild(epSection);
+        });
+
+        // العداد التنازلي
+        const targetDate = new Date("2026-08-02T20:00:00").getTime();
+
+        function updateCountdown() {
+            const now = new Date().getTime();
+            const difference = targetDate - now;
+
+            if (difference > 0) {
+                const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+
+                document.getElementById('days').innerText = String(days).padStart(2, '0');
+                document.getElementById('hours').innerText = String(hours).padStart(2, '0');
+                document.getElementById('minutes').innerText = String(minutes).padStart(2, '0');
+                document.getElementById('seconds').innerText = String(seconds).padStart(2, '0');
+            } else {
+                document.getElementById('countdown').innerHTML = "<span style='color:#ff9800; font-weight:bold;'>حان موعد توفر الحلقة الجديدة!</span>";
+            }
+        }
+
+        setInterval(updateCountdown, 1000);
+        updateCountdown();
+    </script>
+
+    <!-- إعلانات Adsterra -->
+    <script src="https://pl30586282.effectivecpmnetwork.com/91/de/a9/91dea99a2c0107ea84bef42b886dbbae.js"></script>
+    <script src="https://pl30586730.effectivecpmnetwork.com/28/04/97/280497d1bc86158457d9ebfaec469991.js"></script>
+
+</body>
+</html>
