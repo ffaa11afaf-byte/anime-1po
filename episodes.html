@@ -49,7 +49,6 @@
 
     <div class="player-box">
         <div class="player-container">
-            <!-- المشغل فارغ في البداية لمنع التشغيل التلقائي -->
             <iframe id="videoPlayer" src="" allowfullscreen scrolling="no"></iframe>
         </div>
     </div>
@@ -57,7 +56,7 @@
     <h3>قائمة الحلقات</h3>
     <div id="episodesList"></div>
 
-    <!-- العداد التنازلي -->
+    <!-- العداد التنازلي التلقائي -->
     <div class="timer-card">
         <div class="timer-title">موعد نزول الحلقة القادمة:</div>
         <div class="timer-display" id="countdown">
@@ -108,6 +107,13 @@
                         { quality: "720p", embedUrl: "https://stape.me/e/v29GxK2YQDc4gZl" },
                         { quality: "1080p", embedUrl: "https://stape.me/e/Y1LdloX47jhvGbJ" }
                     ]
+                },
+                {
+                    ep: 6,
+                    servers: [
+                        { quality: "720p", embedUrl: "https://stape.me/e/Xd3KV2kQP2UDvVo" },
+                        { quality: "1080p", embedUrl: "https://stape.me/e/oGKJQGB4JahJyOk" }
+                    ]
                 }
             ]
         };
@@ -121,7 +127,6 @@
             element.classList.add('active');
         }
 
-        // توليد الحلقات والأزرار دون تشغيل تلقائي
         animeData.episodes.forEach((episode) => {
             const epSection = document.createElement('div');
             epSection.className = 'ep-section';
@@ -146,26 +151,39 @@
             listContainer.appendChild(epSection);
         });
 
-        // العداد التنازلي
-        const targetDate = new Date("2026-08-02T20:00:00").getTime();
+        // *** العداد التنازلي المحدث (يعاد أسبوعياً أوتوماتيكياً) ***
+        function getNextTargetDate() {
+            let target = new Date("2026-08-02T20:00:00"); // تاريخ بداية السلسلة يوم الأحد الساعة 8 مساءً
+            const now = new Date();
+            
+            // إذا تجاوزنا التاريخ المحدد، يضيف أسبوعاً تلو الآخر حتى يصل للموعد القادم
+            while (target.getTime() <= now.getTime()) {
+                target.setDate(target.getDate() + 7);
+            }
+            return target.getTime();
+        }
+
+        let targetDate = getNextTargetDate();
 
         function updateCountdown() {
             const now = new Date().getTime();
-            const difference = targetDate - now;
+            let difference = targetDate - now;
 
-            if (difference > 0) {
-                const days = Math.floor(difference / (1000 * 60 * 60 * 24));
-                const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
-                const seconds = Math.floor((difference % (1000 * 60)) / 1000);
-
-                document.getElementById('days').innerText = String(days).padStart(2, '0');
-                document.getElementById('hours').innerText = String(hours).padStart(2, '0');
-                document.getElementById('minutes').innerText = String(minutes).padStart(2, '0');
-                document.getElementById('seconds').innerText = String(seconds).padStart(2, '0');
-            } else {
-                document.getElementById('countdown').innerHTML = "<span style='color:#ff9800; font-weight:bold;'>حان موعد توفر الحلقة الجديدة!</span>";
+            // إذا انتهى العداد أثناء وجود الزائر، يحسب الموعد الجديد فوراً للأسبوع القادم
+            if (difference <= 0) {
+                targetDate = getNextTargetDate();
+                difference = targetDate - now;
             }
+
+            const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+
+            document.getElementById('days').innerText = String(days).padStart(2, '0');
+            document.getElementById('hours').innerText = String(hours).padStart(2, '0');
+            document.getElementById('minutes').innerText = String(minutes).padStart(2, '0');
+            document.getElementById('seconds').innerText = String(seconds).padStart(2, '0');
         }
 
         setInterval(updateCountdown, 1000);
