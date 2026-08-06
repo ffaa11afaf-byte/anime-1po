@@ -13,7 +13,7 @@
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>قائمة الحلقات - Mushoku Tensei Season 3</title>
+    <title>عرض الأنمي والحلقات</title>
     <style>
         * { box-sizing: border-box; font-family: sans-serif; text-decoration: none; }
         body { background: #121212; color: white; margin: 0; padding: 10px; text-align: center; padding-bottom: 50px; }
@@ -50,10 +50,10 @@
 <body>
 
     <div class="nav-bar">
-        <a href="index.html" class="back-btn">➔ العودة للرئيسية</a>
+        <a href="index.html" class="back-btn">➔ العودة لقائمة الأنميات</a>
     </div>
 
-    <h1>اختر الحلقة والجودة للمشاهدة</h1>
+    <h1 id="animeHeaderTitle">اختر الحلقة والجودة للمشاهدة</h1>
 
     <div class="player-box">
         <div class="player-container">
@@ -84,86 +84,113 @@
         const listContainer = document.getElementById('episodesList');
         const iframe = document.getElementById('videoPlayer');
 
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentAnimeId = urlParams.get('id') || 'mushoku';
+
         function loadVideo(url, element) {
             iframe.src = url;
             document.querySelectorAll('.quality-btn').forEach(btn => btn.classList.remove('active'));
             element.classList.add('active');
         }
 
-        // جلب البيانات مباشرة من JSONBin
         fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
-            headers: {
-                "X-Master-Key": API_KEY
-            }
+            headers: { "X-Master-Key": API_KEY }
         })
         .then(response => response.json())
         .then(data => {
-            const animeData = data.record;
-            listContainer.innerHTML = ''; // إزالة نص جاري التحميل
+            const animes = data.record.animes || [];
+            const anime = animes.find(a => a.id === currentAnimeId);
 
-            animeData.episodes.forEach((episode) => {
-                const epSection = document.createElement('div');
-                epSection.className = 'ep-section';
-                
-                const epTitle = document.createElement('span');
-                epTitle.className = 'ep-title';
-                epTitle.innerText = `حلقة ${episode.ep}`;
-                epSection.appendChild(epTitle);
+            if (!anime) {
+                listContainer.innerHTML = '<p style="color:red;">الأنمي المطلوب غير موجود</p>';
+                return;
+            }
 
-                const linksContainer = document.createElement('div');
-                linksContainer.className = 'ep-links-container';
-                
-                episode.servers.forEach(server => {
-                    const qualityBtn = document.createElement('a');
-                    qualityBtn.className = 'quality-btn';
-                    qualityBtn.innerText = server.quality;
-                    qualityBtn.onclick = () => loadVideo(server.embedUrl, qualityBtn);
-                    linksContainer.appendChild(qualityBtn);
+            document.getElementById('animeHeaderTitle').innerText = anime.title;
+            document.title = `${anime.title} - الحلقات`;
+            listContainer.innerHTML = '';
+
+            if (!anime.episodes || anime.episodes.length === 0) {
+                listContainer.innerHTML = '<p class="loading-text">لا توجد حلقات مضافة حالياً لهذا الأنمي</p>';
+            } else {
+                anime.episodes.forEach((episode) => {
+                    const epSection = document.createElement('div');
+                    epSection.className = 'ep-section';
+                    
+                    const epTitle = document.createElement('span');
+                    epTitle.className = 'ep-title';
+                    epTitle.innerText = `حلقة ${episode.ep}`;
+                    epSection.appendChild(epTitle);
+
+                    const linksContainer = document.createElement('div');
+                    linksContainer.className = 'ep-links-container';
+                    
+                    episode.servers.forEach(server => {
+                        if (server.embedUrl && server.embedUrl.trim() !== "") {
+                            const qualityBtn = document.createElement('a');
+                            qualityBtn.className = 'quality-btn';
+                            qualityBtn.innerText = server.quality;
+                            qualityBtn.onclick = () => loadVideo(server.embedUrl, qualityBtn);
+                            linksContainer.appendChild(qualityBtn);
+                        }
+                    });
+
+                    epSection.appendChild(linksContainer);
+                    listContainer.appendChild(epSection);
                 });
+            }
 
-                epSection.appendChild(linksContainer);
-                listContainer.appendChild(epSection);
-            });
+            // تشغيل العداد الخاص بهذا الأنمي
+            const targetDay = anime.airDay !== undefined ? anime.airDay : 0; // 0 = الأحد افتراضياً
+            const targetTime = anime.airTime || "20:00";
+            startAnimeCountdown(targetDay, targetTime);
         })
         .catch(err => {
-            listContainer.innerHTML = '<p style="color:red;">حدث خطأ أثناء تحميل الحلقات</p>';
-            console.error(err);
+            listContainer.innerHTML = '<p style="color:red;">حدث خطأ أثناء تحميل البيانات</p>';
         });
 
-        // العداد التنازلي التلقائي
-        function getNextTargetDate() {
-            let target = new Date("2026-08-02T20:00:00");
-            const now = new Date();
-            while (target.getTime() <= now.getTime()) {
-                target.setDate(target.getDate() + 7);
-            }
-            return target.getTime();
-        }
+        // دالة العداد الديناميكي لكل أنمي
+        function startAnimeCountdown(targetDay, targetTimeStr) {
+            const [hours, minutes] = targetTimeStr.split(":").map(Number);
 
-        let targetDate = getNextTargetDate();
+            function getNextTargetDate() {
+                const now = new Date();
+                let target = new Date(now);
+                target.setHours(hours, minutes, 0, 0);
 
-        function updateCountdown() {
-            const now = new Date().getTime();
-            let difference = targetDate - now;
-
-            if (difference <= 0) {
-                targetDate = getNextTargetDate();
-                difference = targetDate - now;
+                let dayDifference = (targetDay - now.getDay() + 7) % 7;
+                if (dayDifference === 0 && now.getTime() >= target.getTime()) {
+                    dayDifference = 7;
+                }
+                target.setDate(now.getDate() + dayDifference);
+                return target.getTime();
             }
 
-            const days = Math.floor(difference / (1000 * 60 * 60 * 24));
-            const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+            let targetDate = getNextTargetDate();
 
-            document.getElementById('days').innerText = String(days).padStart(2, '0');
-            document.getElementById('hours').innerText = String(hours).padStart(2, '0');
-            document.getElementById('minutes').innerText = String(minutes).padStart(2, '0');
-            document.getElementById('seconds').innerText = String(seconds).padStart(2, '0');
+            function updateTimer() {
+                const now = new Date().getTime();
+                let diff = targetDate - now;
+
+                if (diff <= 0) {
+                    targetDate = getNextTargetDate();
+                    diff = targetDate - now;
+                }
+
+                const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const s = Math.floor((diff % (1000 * 60)) / 1000);
+
+                document.getElementById('days').innerText = String(days).padStart(2, '0');
+                document.getElementById('hours').innerText = String(h).padStart(2, '0');
+                document.getElementById('minutes').innerText = String(m).padStart(2, '0');
+                document.getElementById('seconds').innerText = String(s).padStart(2, '0');
+            }
+
+            setInterval(updateTimer, 1000);
+            updateTimer();
         }
-
-        setInterval(updateCountdown, 1000);
-        updateCountdown();
     </script>
 
     <!-- إعلانات Adsterra -->
