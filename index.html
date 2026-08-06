@@ -1,53 +1,94 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-90XKS2QEMF"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-QP6WE1CMSM"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
 
-  gtag('config', 'G-90XKS2QEMF');
-</script>
+      gtag('config', 'G-QP6WE1CMSM');
+    </script>
     
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>الرئيسية - Mushoku Tensei Season 3</title>
+    <title>أنميات صيف 2026 - الرئيسية</title>
     <style>
         * { box-sizing: border-box; font-family: sans-serif; text-decoration: none; }
         body { background: #121212; color: white; margin: 0; padding: 20px 10px; text-align: center; display: flex; flex-direction: column; min-height: 100vh; justify-content: space-between; }
         
-        .main-content { margin: auto 0; }
-        .anime-poster { width: 180px; height: 260px; border-radius: 10px; object-fit: cover; border: 2px solid #ff9800; box-shadow: 0 4px 15px rgba(255,152,0,0.2); margin-bottom: 15px; }
-        h1 { font-size: 1.3rem; color: #fff; margin-bottom: 20px; }
-        
-        /* زر مشاهدة */
-        .watch-btn { display: inline-block; background: #ff9800; color: #000; font-weight: bold; font-size: 1.1rem; padding: 12px 35px; border-radius: 25px; transition: 0.3s; }
-        .watch-btn:hover { background: #e68a00; transform: scale(1.05); }
+        header { margin-bottom: 25px; }
+        header h1 { font-size: 1.6rem; color: #ff9800; margin: 0 0 5px 0; }
+        header p { color: #aaa; font-size: 0.9rem; margin: 0; }
 
-        /* حقوق التليجرام بالأسفل */
+        .anime-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; max-width: 1000px; margin: 0 auto; width: 100%; }
+        
+        .anime-card { background: #1a1a1a; border: 1px solid #333; border-radius: 10px; padding: 10px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; transition: 0.3s; }
+        .anime-card:hover { border-color: #ff9800; transform: translateY(-3px); }
+        .anime-poster { width: 100%; height: 210px; border-radius: 8px; object-fit: cover; border: 1px solid #444; margin-bottom: 10px; }
+        .anime-title { font-size: 0.95rem; color: #fff; margin-bottom: 12px; height: 38px; display: flex; align-items: center; justify-content: center; text-align: center; line-height: 1.2; }
+        
+        .watch-btn { display: inline-block; background: #ff9800; color: #000; font-weight: bold; font-size: 0.9rem; padding: 8px 20px; border-radius: 20px; transition: 0.3s; width: 100%; }
+        .watch-btn:hover { background: #e68a00; }
+
         footer { margin-top: 30px; font-size: 0.85rem; color: #888; padding: 10px 0; }
         footer a { color: #ff9800; font-weight: bold; }
         footer a:hover { text-decoration: underline; }
+
+        .loading-text { color: #ff9800; font-size: 1rem; grid-column: 1 / -1; margin: 30px 0; }
     </style>
 </head>
 <body>
 
-    <div class="main-content">
-        <!-- البوستر والشغال بنفس الرابط -->
-        <img src="https://cdn.myanimelist.net/r/200x268/images/anime/1441/158090.webp?s=f068b6e29263a9dcce1c1be74c753c14" alt="بوستر الأنمي" class="anime-poster">
-        
-        <h1>انمي Mushoku Tensei: Jobless Reincarnation Season 3</h1>
+    <div>
+        <header>
+            <h1>🔥 أنميات صيف 2026</h1>
+            <p>اختر الأنمي لمشاهدة الحلقات المترجمة بدقة عالية</p>
+        </header>
 
-        <!-- زر الانتقال لصفحة الحلقات -->
-        <a href="episodes.html" class="watch-btn">مشاهدة</a>
+        <div class="anime-grid" id="animeGrid">
+            <p class="loading-text">جاري تحميل قائمة الأنميات...</p>
+        </div>
     </div>
 
-    <!-- تليجرام في الأسفل -->
     <footer>
         جميع الحقوق محفوظة © | <a href="https://t.me/anime_111PO" target="_blank">قناة التليكرام</a>
     </footer>
+
+    <script>
+        const BIN_ID = "6a743517da38895dfec03e7b";
+        const API_KEY = "$2a$10$KRZVhWALepp2mKKnjcND.OS.g8r4GsTZ2lbD8fgkxfW4CyLTo9oJm";
+        const animeGrid = document.getElementById('animeGrid');
+
+        fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
+            headers: { "X-Master-Key": API_KEY }
+        })
+        .then(res => res.json())
+        .then(data => {
+            const animes = data.record.animes || [];
+            animeGrid.innerHTML = '';
+
+            if (animes.length === 0) {
+                animeGrid.innerHTML = '<p class="loading-text">لا توجد أنميات مضافة حالياً</p>';
+                return;
+            }
+
+            animes.forEach(anime => {
+                const card = document.createElement('div');
+                card.className = 'anime-card';
+                card.innerHTML = `
+                    <img src="${anime.poster}" alt="${anime.title}" class="anime-poster">
+                    <div class="anime-title">${anime.title}</div>
+                    <a href="episodes.html?id=${anime.id}" class="watch-btn">مشاهدة</a>
+                `;
+                animeGrid.appendChild(card);
+            });
+        })
+        .catch(err => {
+            animeGrid.innerHTML = '<p style="color:red; grid-column:1/-1;">حدث خطأ في جلب الأنميات</p>';
+        });
+    </script>
 
     <!-- إعلانات Adsterra -->
     <script src="https://pl30586282.effectivecpmnetwork.com/91/de/a9/91dea99a2c0107ea84bef42b886dbbae.js"></script>
