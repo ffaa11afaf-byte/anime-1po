@@ -64,7 +64,7 @@
         fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
             headers: { "X-Master-Key": API_KEY }
         })
-        .then(res => re.json())
+        .then(res => res.json())
         .then(data => {
             const animes = data.record.animes || [];
             animeGrid.innerHTML = '';
