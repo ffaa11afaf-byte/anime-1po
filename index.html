@@ -54,8 +54,11 @@
 
     <footer>
         جميع الحقوق محفوظة © | <a href="https://t.me/anime_111PO" target="_blank">قناة التليكرام</a>
+ 
     </footer>
-
+  <footer>  
+  ----------أعلان---أعلان---أعلان----------
+  </footer>     
     <script>
         const BIN_ID = "6a743517da38895dfec03e7b";
         const API_KEY = "$2a$10$KRZVhWALepp2mKKnjcND.OS.g8r4GsTZ2lbD8fgkxfW4CyLTo9oJm";
@@ -64,7 +67,7 @@
         fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
             headers: { "X-Master-Key": API_KEY }
         })
-        .then(res => res.json())
+        .then(res => re.json())
         .then(data => {
             const animes = data.record.animes || [];
             animeGrid.innerHTML = '';
