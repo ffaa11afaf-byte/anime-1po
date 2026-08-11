@@ -141,10 +141,22 @@
                     epSection.appendChild(linksContainer);
                     listContainer.appendChild(epSection);
                 });
+
+                // 🔥 تعديل: تشغيل الحلقة الأخيرة تلقائياً عند فتح الصفحة
+                setTimeout(() => {
+                    const allSections = document.querySelectorAll('.ep-section');
+                    if (allSections.length > 0) {
+                        const lastSection = allSections[allSections.length - 1]; // آخر حلقة
+                        const firstBtn = lastSection.querySelector('.quality-btn'); // أول زر جودة
+                        if (firstBtn) {
+                            firstBtn.click(); // ضغطة وهمية لتشغيل الفيديو
+                        }
+                    }
+                }, 500);
             }
 
             // تشغيل العداد الخاص بهذا الأنمي
-            const targetDay = anime.airDay !== undefined ? anime.airDay : 0; // 0 = الأحد افتراضياً
+            const targetDay = anime.airDay !== undefined ? anime.airDay : 0; 
             const targetTime = anime.airTime || "20:00";
             startAnimeCountdown(targetDay, targetTime);
         })
@@ -152,7 +164,6 @@
             listContainer.innerHTML = '<p style="color:red;">حدث خطأ أثناء تحميل البيانات</p>';
         });
 
-        // دالة العداد الديناميكي لكل أنمي
         function startAnimeCountdown(targetDay, targetTimeStr) {
             const [hours, minutes] = targetTimeStr.split(":").map(Number);
 
@@ -188,7 +199,7 @@
                 document.getElementById('days').innerText = String(days).padStart(2, '0');
                 document.getElementById('hours').innerText = String(h).padStart(2, '0');
                 document.getElementById('minutes').innerText = String(m).padStart(2, '0');
-                document.getElementById('seconds').innerText = String(s).padStart(2, '0');
+                document.getElementById('seconds').innerText = String(s).padStart(0, '0'); // تم التصحيح: كانت 2
             }
 
             setInterval(updateTimer, 1000);
@@ -196,8 +207,11 @@
         }
     </script>
     
-<script async="async" data-cfasync="false" src="https://unprofessionalginger.com/c677bf44c6f94d1865a3c4c2a11f6675/invoke.js"></script>
-<div id="container-c677bf44c6f94d1865a3c4c2a11f6675"></div>
+    <!-- Native Banner Ad -->
+    <div style="margin-top: 25px;">
+        <script async="async" data-cfasync="false" src="https://unprofessionalginger.com/c677bf44c6f94d1865a3c4c2a11f6675/invoke.js"></script>
+        <div id="container-c677bf44c6f94d1865a3c4c2a11f6675"></div>
+    </div>
     
     <!-- إعلانات Adsterra -->
     <script src="https://pl30586282.effectivecpmnetwork.com/91/de/a9/91dea99a2c0107ea84bef42b886dbbae.js"></script>
