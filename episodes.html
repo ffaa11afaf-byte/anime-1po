@@ -78,12 +78,12 @@
         جميع الحقوق محفوظة © | <a href="https://t.me/anime_111PO" target="_blank">قناة التليكرام</a>
     </footer>
     <footer>
-        ----------اعلان---اعلان---اعلان----------
+        ------------اعلان-------------
     </footer>
 
     <script>
-        const BIN_ID = "6a743517da38895dfec03e7b";
-        const API_KEY = "$2a$10$KRZVhWALepp2mKKnjcND.OS.g8r4GsTZ2lbD8fgkxfW4CyLTo9oJm";
+        // اس
+        const API_URL = "https://anime-api-proxy.ffaa11afaf.workers.dev";
         const listContainer = document.getElementById('episodesList');
         const iframe = document.getElementById('videoPlayer');
 
@@ -96,9 +96,7 @@
             element.classList.add('active');
         }
 
-        fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
-            headers: { "X-Master-Key": API_KEY }
-        })
+        fetch(API_URL)
         .then(response => response.json())
         .then(data => {
             const animes = data.record.animes || [];
@@ -142,7 +140,7 @@
                     listContainer.appendChild(epSection);
                 });
 
-                // 🔥 تعديل: تشغيل الحلقة الأخيرة تلقائياً عند فتح الصفحة
+                // 🔥 تشغيل الحلقة الأخيرة تلقائياً عند فتح الصفحة
                 setTimeout(() => {
                     const allSections = document.querySelectorAll('.ep-section');
                     if (allSections.length > 0) {
@@ -199,7 +197,7 @@
                 document.getElementById('days').innerText = String(days).padStart(2, '0');
                 document.getElementById('hours').innerText = String(h).padStart(2, '0');
                 document.getElementById('minutes').innerText = String(m).padStart(2, '0');
-                document.getElementById('seconds').innerText = String(s).padStart(0, '0'); // تم التصحيح: كانت 2
+                document.getElementById('seconds').innerText = String(s).padStart(2, '0');
             }
 
             setInterval(updateTimer, 1000);
