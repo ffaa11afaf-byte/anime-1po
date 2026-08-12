@@ -65,9 +65,11 @@
         const API_KEY = "$2a$10$KRZVhWALepp2mKKnjcND.OS.g8r4GsTZ2lbD8fgkxfW4CyLTo9oJm";
         const animeGrid = document.getElementById('animeGrid');
 
-        fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
-            headers: { "X-Master-Key": API_KEY }
-        })
+            <script>
+        const API_URL = "https://anime-api-proxy.ffaa11afaf.workers.dev";
+        const animeGrid = document.getElementById('animeGrid');
+
+        fetch(API_URL)
         .then(res => res.json())
         .then(data => {
             const animes = data.record.animes || [];
