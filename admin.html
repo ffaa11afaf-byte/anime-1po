@@ -47,7 +47,7 @@
     <div id="app" class="container">
         <h1>🛠️ لوحة تحكم الأنميات</h1>
 
-        <!-- قسم جديد: تخصيص أنميات السلايدر العلوي -->
+        <!-- قسم تخصيص أنميات السلايدر العلوي -->
         <div class="card">
             <h2>🎠 تحديد أنميات السلايدر العلوي (9 أنميات كحد أقصى)</h2>
             <label>معرفات الأنميات (IDs) مفصولة بفارزة ( , ):</label>
@@ -65,6 +65,8 @@
             <input type="text" id="animeTitle" placeholder="مثال: Solo Leveling">
             <label>رابط البوستر:</label>
             <input type="text" id="animePoster" placeholder="https://...">
+            <label>إجمالي الحلقات المتوقعة:</label>
+            <input type="number" id="animeTotalEps" placeholder="مثال: 12 أو 24">
             <label>يوم العرض:</label>
             <select id="airDay">
                 <option value="0">الأحد (0)</option>
@@ -184,7 +186,6 @@
                     sliderAnimes = [];
                 }
                 
-                // ملء حقل السلايدر بالأنميات المحفوظة حالياً
                 document.getElementById('sliderIdsInput').value = sliderAnimes.join(', ');
                 renderAnimeList(allAnimes);
             })
@@ -202,10 +203,11 @@
             }
             list.forEach(anime => {
                 const epCount = anime.episodes ? anime.episodes.length : 0;
+                const totalEps = anime.totalEps ? anime.totalEps : '?';
                 const item = document.createElement('div');
                 item.className = 'anime-item';
                 item.innerHTML = `
-                    <div class="anime-info">${anime.title} (${anime.id}) - ${epCount} حلقة</div>
+                    <div class="anime-info">${anime.title} (${anime.id}) - ${epCount}/${totalEps} حلقة</div>
                     <div class="anime-actions">
                         <button class="sm-btn btn-danger" onclick="deleteAnime('${anime.id}')">حذف</button>
                     </div>
@@ -224,12 +226,10 @@
             const rawInput = document.getElementById('sliderIdsInput').value.trim();
             const status = document.getElementById('sliderStatus');
 
-            // تحويل النص لمصفوفة معرفات وتنظيفها من المسافات الزائدة
             let ids = rawInput.split(',')
                               .map(id => id.trim().toLowerCase())
                               .filter(id => id !== "");
 
-            // اقتطاع القائمة لتأخذ أول 9 فقط
             if(ids.length > 9) {
                 ids = ids.slice(0, 9);
             }
@@ -249,6 +249,8 @@
             const id = document.getElementById('animeId').value.trim();
             const title = document.getElementById('animeTitle').value.trim();
             const poster = document.getElementById('animePoster').value.trim();
+            const totalEpsInput = document.getElementById('animeTotalEps').value.trim();
+            const totalEps = totalEpsInput ? parseInt(totalEpsInput) : 0;
             const airDay = parseInt(document.getElementById('airDay').value);
             const airTime = document.getElementById('airTime').value.trim();
             const status = document.getElementById('animeStatus');
@@ -266,10 +268,11 @@
             if(existing) {
                 existing.title = title;
                 existing.poster = poster;
+                existing.totalEps = totalEps;
                 existing.airDay = airDay;
                 existing.airTime = airTime;
             } else {
-                allAnimes.push({ id, title, poster, airDay, airTime, episodes: [] });
+                allAnimes.push({ id, title, poster, totalEps, airDay, airTime, episodes: [] });
             }
 
             saveToWorker(allAnimes, sliderAnimes, () => {
@@ -323,7 +326,6 @@
         function deleteAnime(id) {
             if(!confirm(`هل أنت تأكد من حذف الأنمي (${id}) بالكامل؟`)) return;
             allAnimes = allAnimes.filter(a => a.id !== id);
-            // كذلك حذفه من قائمة السلايدر إذا كان موجوداً فيها
             sliderAnimes = sliderAnimes.filter(sId => sId !== id);
 
             saveToWorker(allAnimes, sliderAnimes, () => {
