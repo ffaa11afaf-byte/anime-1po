@@ -47,7 +47,7 @@
             <script type="text/javascript" src="https://unprofessionalginger.com/a563f906e29d3be56d9633c80cd288d7/invoke.js"></script>
         </div>
 
-        <a id="downloadBtn" href="#">اضغط هنا للتحميل المباشر</a>
+        <a id="downloadBtn" href="#" target="_blank" rel="noopener noreferrer">اضغط هنا للتحميل المباشر</a>
     </div>
 
     <script>
@@ -57,8 +57,13 @@
         
         if (encodedLink) {
             try {
-                // فك التشفير بأمان
-                const decodedLink = decodeURIComponent(escape(atob(decodeURIComponent(encodedLink))));
+                // 1. فك التشفير بأمان
+                let decodedLink = decodeURIComponent(escape(atob(decodeURIComponent(encodedLink))));
+                
+                // 2. تحويل رابط المشغل (/e/) تلقائياً إلى رابط صفحة التحميل المباشرة (/v/)
+                if (decodedLink.includes('/e/')) {
+                    decodedLink = decodedLink.replace('/e/', '/v/');
+                }
                 
                 let count = 10;
                 const countDisplay = document.getElementById('count');
