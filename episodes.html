@@ -24,7 +24,7 @@
         .nav-bar { text-align: right; margin-bottom: 10px; }
         .back-btn { color: #ff9800; font-size: 0.9rem; font-weight: bold; }
         
-        h1 { font-size: 1.2rem; color: #ff9800; margin: 10px 0; }
+        h1 { font-size: 1.2rem; color: #ff9800; margin: 10px 0; direction: ltr; text-align: center; unicode-bidi: plaintext; }
         
         .player-box { background: #000; border-radius: 8px; overflow: hidden; margin-bottom: 15px; border: 1px solid #333; }
         .player-container { position: relative; padding-bottom: 56.25%; height: 0; }
@@ -97,6 +97,7 @@
         const targetEpParam = urlParams.get('ep'); // قراءة رقم الحلقة المحددة من الرابط إن وجدت
 
         const daysArabic = ["الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
+        let fetchAttempts = 0;
 
         function decryptData(encryptedStr) {
             try {
@@ -155,82 +156,97 @@
             if(epNum) saveToWatchHistory(currentAnimeId, epNum);
         }
 
-        fetch(API_URL)
-        .then(response => response.json())
-        .then(data => {
-            let animes = [];
-            let rec = data.record ? data.record : data;
+        function loadEpisodesData() {
+            const fetchUrl = API_URL + "?t=" + new Date().getTime();
 
-            if (rec && rec.encryptedData) {
-                const decrypted = decryptData(rec.encryptedData);
-                animes = decrypted ? (decrypted.animes || []) : [];
-            } else if (rec && rec.animes) {
-                animes = rec.animes;
-            }
+            fetch(fetchUrl)
+            .then(response => {
+                if (!response.ok) throw new Error("خطأ اتصال");
+                return response.json();
+            })
+            .then(data => {
+                let animes = [];
+                let rec = data.record ? data.record : data;
 
-            const anime = animes.find(a => a.id === currentAnimeId);
+                if (rec && rec.encryptedData) {
+                    const decrypted = decryptData(rec.encryptedData);
+                    animes = decrypted ? (decrypted.animes || []) : [];
+                } else if (rec && rec.animes) {
+                    animes = rec.animes;
+                }
 
-            if (!anime) {
-                listContainer.innerHTML = '<p style="color:red;">الأنمي المطلوب غير موجود</p>';
-                document.getElementById('animeHeaderTitle').innerText = "خطأ في العرض";
-                return;
-            }
+                const anime = animes.find(a => a.id === currentAnimeId);
 
-            document.getElementById('animeHeaderTitle').innerText = anime.title;
-            document.title = `${anime.title} - الحلقات`;
-            listContainer.innerHTML = '';
+                if (!anime) {
+                    listContainer.innerHTML = '<p style="color:red;">الأنمي المطلوب غير موجود</p>';
+                    document.getElementById('animeHeaderTitle').innerText = "خطأ في العرض";
+                    return;
+                }
 
-            const currentEpCount = anime.episodes ? anime.episodes.length : 0;
+                fetchAttempts = 0;
+                document.getElementById('animeHeaderTitle').innerText = anime.title;
+                document.title = `${anime.title} - الحلقات`;
+                listContainer.innerHTML = '';
 
-            if (!anime.episodes || anime.episodes.length === 0) {
-                listContainer.innerHTML = '<p class="loading-text">لا توجد حلقات مضافة حالياً لهذا الأنمي</p>';
-            } else {
-                anime.episodes.forEach((episode) => {
-                    const epSection = document.createElement('div');
-                    epSection.className = 'ep-section';
-                    epSection.setAttribute('data-ep', episode.ep);
-                    
-                    const epTitle = document.createElement('span');
-                    epTitle.className = 'ep-title';
-                    epTitle.innerText = `حلقة ${episode.ep}`;
-                    epSection.appendChild(epTitle);
+                const currentEpCount = anime.episodes ? anime.episodes.length : 0;
 
-                    const linksContainer = document.createElement('div');
-                    linksContainer.className = 'ep-links-container';
-                    
-                    episode.servers.forEach(server => {
-                        if (server.embedUrl && server.embedUrl.trim() !== "") {
-                            const qualityBtn = document.createElement('a');
-                            qualityBtn.className = 'quality-btn';
-                            qualityBtn.innerText = server.quality;
-                            qualityBtn.onclick = () => loadVideo(server.embedUrl, qualityBtn, episode.ep);
-                            linksContainer.appendChild(qualityBtn);
-                        }
+                if (!anime.episodes || anime.episodes.length === 0) {
+                    listContainer.innerHTML = '<p class="loading-text">لا توجد حلقات مضافة حالياً لهذا الأنمي</p>';
+                } else {
+                    anime.episodes.forEach((episode) => {
+                        const epSection = document.createElement('div');
+                        epSection.className = 'ep-section';
+                        epSection.setAttribute('data-ep', episode.ep);
+                        
+                        const epTitle = document.createElement('span');
+                        epTitle.className = 'ep-title';
+                        epTitle.innerText = `حلقة ${episode.ep}`;
+                        epSection.appendChild(epTitle);
+
+                        const linksContainer = document.createElement('div');
+                        linksContainer.className = 'ep-links-container';
+                        
+                        episode.servers.forEach(server => {
+                            if (server.embedUrl && server.embedUrl.trim() !== "") {
+                                const qualityBtn = document.createElement('a');
+                                qualityBtn.className = 'quality-btn';
+                                qualityBtn.innerText = server.quality;
+                                qualityBtn.onclick = () => loadVideo(server.embedUrl, qualityBtn, episode.ep);
+                                linksContainer.appendChild(qualityBtn);
+                            }
+                        });
+
+                        epSection.appendChild(linksContainer);
+                        listContainer.appendChild(epSection);
                     });
 
-                    epSection.appendChild(linksContainer);
-                    listContainer.appendChild(epSection);
-                });
-
-                // التوجيه المباشر والتشغيل التلقائي إذا جاء رقم الحلقة بالرابط (من سجل المشاهدات)
-                if (targetEpParam) {
-                    setTimeout(() => {
-                        const targetSection = document.querySelector(`.ep-section[data-ep="${targetEpParam}"]`);
-                        if (targetSection) {
-                            targetSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                            const targetBtn = targetSection.querySelector('.quality-btn');
-                            if (targetBtn) targetBtn.click();
-                        }
-                    }, 400);
+                    // التوجيه المباشر والتشغيل التلقائي إذا جاء رقم الحلقة بالرابط (من سجل المشاهدات)
+                    if (targetEpParam) {
+                        setTimeout(() => {
+                            const targetSection = document.querySelector(`.ep-section[data-ep="${targetEpParam}"]`);
+                            if (targetSection) {
+                                targetSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                const targetBtn = targetSection.querySelector('.quality-btn');
+                                if (targetBtn) targetBtn.click();
+                            }
+                        }, 400);
+                    }
                 }
-            }
 
-            setupSmartCountdown(anime, currentEpCount);
-        })
-        .catch(err => {
-            console.error(err);
-            listContainer.innerHTML = '<p style="color:red;">حدث خطأ أثناء تحميل البيانات</p>';
-        });
+                setupSmartCountdown(anime, currentEpCount);
+            })
+            .catch(err => {
+                console.error(err);
+                fetchAttempts++;
+                if (fetchAttempts <= 3) {
+                    setTimeout(loadEpisodesData, 1500);
+                } else {
+                    listContainer.innerHTML = '<p style="color:red;">حدث خطأ أثناء تحميل البيانات، يرجى إعادة التحديث</p>';
+                }
+            });
+        }
+
+        loadEpisodesData();
 
         function setupSmartCountdown(anime, currentEpCount) {
             const container = document.getElementById('countdownContainer');
