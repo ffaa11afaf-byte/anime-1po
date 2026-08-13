@@ -94,6 +94,7 @@
 
         const urlParams = new URLSearchParams(window.location.search);
         const currentAnimeId = urlParams.get('id');
+        const targetEpParam = urlParams.get('ep'); // قراءة رقم الحلقة المحددة من الرابط إن وجدت
 
         const daysArabic = ["الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
 
@@ -110,14 +111,26 @@
             }
         }
 
+        // تحسين دالة الحفظ الذكي لتقدم المشاهدة (تمنع التراجع للحلقات الأقل)
         function saveToWatchHistory(animeId, epNum) {
             try {
                 let history = JSON.parse(localStorage.getItem('animeHistory') || '[]');
+                const existingItem = history.find(item => item.animeId === animeId);
+                
+                let epToSave = parseInt(epNum);
+
+                // إذا كان الأنمي محفوظاً سابقاً برقم حلقة أعلى، نحتفظ بالرقم الأعلى
+                if (existingItem && parseInt(existingItem.epNum) > epToSave) {
+                    epToSave = parseInt(existingItem.epNum);
+                }
+
+                // تنظيف السجل القديم لهذا الأنمي
                 history = history.filter(item => item.animeId !== animeId);
                 
+                // إعادة الحفظ في البداية برقم الحلقة المتقدم
                 history.unshift({
                     animeId: animeId,
-                    epNum: epNum,
+                    epNum: epToSave,
                     progress: 100,
                     timestamp: Date.now()
                 });
@@ -175,6 +188,7 @@
                 anime.episodes.forEach((episode) => {
                     const epSection = document.createElement('div');
                     epSection.className = 'ep-section';
+                    epSection.setAttribute('data-ep', episode.ep);
                     
                     const epTitle = document.createElement('span');
                     epTitle.className = 'ep-title';
@@ -197,9 +211,20 @@
                     epSection.appendChild(linksContainer);
                     listContainer.appendChild(epSection);
                 });
+
+                // التوجيه المباشر والتشغيل التلقائي إذا جاء رقم الحلقة بالرابط (من سجل المشاهدات)
+                if (targetEpParam) {
+                    setTimeout(() => {
+                        const targetSection = document.querySelector(`.ep-section[data-ep="${targetEpParam}"]`);
+                        if (targetSection) {
+                            targetSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            const targetBtn = targetSection.querySelector('.quality-btn');
+                            if (targetBtn) targetBtn.click();
+                        }
+                    }, 400);
+                }
             }
 
-            // تشغيل دالة بناء العداد التفاعلي والمدمج
             setupSmartCountdown(anime, currentEpCount);
         })
         .catch(err => {
@@ -212,7 +237,6 @@
             const totalEps = anime.totalEps || 0;
             const nextEpNum = currentEpCount + 1;
 
-            // إذا أكتملت كل الحلقات المتوقعة
             if (totalEps > 0 && currentEpCount >= totalEps) {
                 container.innerHTML = `<div class="completed-badge">🎉 الأنمي مكتمل بالكامل (${currentEpCount}/${totalEps} حلقة)</div>`;
                 return;
