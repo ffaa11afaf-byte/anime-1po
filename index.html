@@ -14,6 +14,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>أنميات صيف 2026 - الرئيسية</title>
+    
+    <!-- مكتبة فك التشفير -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+
     <style>
         * { box-sizing: border-box; font-family: sans-serif; text-decoration: none; }
         body { background: #121212; color: white; margin: 0; padding: 20px 10px; text-align: center; display: flex; flex-direction: column; min-height: 100vh; justify-content: space-between; }
@@ -60,12 +64,38 @@
 
     <script>
         const API_URL = "https://anime-api-proxy.ffaa11afaf.workers.dev";
+        const SECRET_PASS = "18001900m"; // مفتاح فك التشفير
         const animeGrid = document.getElementById('animeGrid');
+
+        // دالة فك تشفير البيانات المشفرة
+        function decryptData(encryptedStr) {
+            try {
+                const bytes = CryptoJS.AES.decrypt(encryptedStr, SECRET_PASS);
+                const decryptedText = bytes.toString(CryptoJS.enc.Utf8);
+                return JSON.parse(decryptedText);
+            } catch (e) {
+                console.error("خطأ في فك التشفير:", e);
+                return null;
+            }
+        }
 
         fetch(API_URL)
         .then(res => res.json())
         .then(data => {
-            const animes = data.record.animes || [];
+            let animes = [];
+
+            // إذا كانت البيانات مشفرة داخل encryptedData
+            if (data.record && data.record.encryptedData) {
+                const decrypted = decryptData(data.record.encryptedData);
+                animes = decrypted ? (decrypted.animes || []) : [];
+            } 
+            // مرونة إضافية: في حال تم إرسال البيانات بشكل غير مشفر مؤقتاً
+            else if (data.record && data.record.animes) {
+                animes = data.record.animes;
+            } else if (data.animes) {
+                animes = data.animes;
+            }
+
             animeGrid.innerHTML = '';
 
             if (animes.length === 0) {
@@ -74,7 +104,6 @@
             }
 
             animes.forEach(anime => {
-                // الكرت بالكامل أصبح أداة تحويل <a>
                 const card = document.createElement('a');
                 card.href = `episodes.html?id=${anime.id}`;
                 card.className = 'anime-card';
@@ -86,6 +115,7 @@
             });
         })
         .catch(err => {
+            console.error(err);
             animeGrid.innerHTML = '<p style="color:red; grid-column:1/-1;">حدث خطأ في جلب الأنميات</p>';
         });
     </script>
