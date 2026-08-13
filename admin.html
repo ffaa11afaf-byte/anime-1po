@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة تحكم إدارة الأنمي</title>
+    <!-- مكتبة تليجرام للميني أب -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * { box-sizing: border-box; font-family: sans-serif; }
+        body { background: #121212; color: #fff; margin: 0; padding: 15px; direction: rtl; }
+        .container { max-width: 600px; margin: 0 auto; }
+        h1, h2 { color: #ff9800; text-align: center; margin-bottom: 15px; font-size: 1.3rem; }
+        
+        .card { background: #1a1a1a; border: 1px solid #333; border-radius: 10px; padding: 15px; margin-bottom: 15px; }
+        label { display: block; margin: 8px 0 4px; font-size: 0.85rem; color: #bbb; }
+        input, select { width: 100%; padding: 10px; background: #222; border: 1px solid #444; color: #fff; border-radius: 6px; font-size: 0.9rem; }
+        input:focus, select:focus { border-color: #ff9800; outline: none; }
+        
+        .btn { display: block; width: 100%; background: #ff9800; color: #000; font-weight: bold; padding: 12px; border: none; border-radius: 8px; margin-top: 12px; cursor: pointer; font-size: 0.95rem; text-align: center; }
+        .btn-green { background: #28a745; color: #fff; }
+        .btn-danger { background: #dc3545; color: #fff; }
+        
+        .search-box { margin-bottom: 15px; }
+        .anime-item { background: #222; border: 1px solid #333; padding: 10px; border-radius: 6px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+        .anime-info { font-weight: bold; font-size: 0.9rem; }
+        .anime-actions { display: flex; gap: 5px; }
+        .sm-btn { padding: 5px 10px; font-size: 0.75rem; border-radius: 4px; border: none; cursor: pointer; }
+        
+        #unauthorized { display: none; text-align: center; color: #ff5252; margin-top: 50px; }
+        #app { display: none; }
+        .status-msg { text-align: center; font-size: 0.85rem; margin-top: 8px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div id="unauthorized">
+        <h2>⚠️ تنبيه أمان</h2>
+        <p>عذراً، هذه اللوحة مخصصة للأدمن فقط ولا يمكنك الوصول إليها.</p>
+    </div>
+
+    <div id="app" class="container">
+        <h1>🛠️ لوحة تحكم الأنميات</h1>
+
+        <!-- قسم إضافة / تعديل أنمي -->
+        <div class="card">
+            <h2>إضافة / تحديث أنمي</h2>
+            <label>معرف الأنمي (ID - بالإنجليزية):</label>
+            <input type="text" id="animeId" placeholder="مثال: solo">
+            
+            <label>عنوان الأنمي:</label>
+            <input type="text" id="animeTitle" placeholder="مثال: Solo Leveling">
+            
+            <label>رابط البوستر (Poster URL):</label>
+            <input type="text" id="animePoster" placeholder="https://...">
+            
+            <label>يوم العرض (0 للأحد - 6 للسبت):</label>
+            <select id="airDay">
+                <option value="0">الأحد (0)</option>
+                <option value="1">الإثنين (1)</option>
+                <option value="2">الثلاثاء (2)</option>
+                <option value="3">الأربعاء (3)</option>
+                <option value="4">الخميس (4)</option>
+                <option value="5">الجمعة (5)</option>
+                <option value="6">السبت (6)</option>
+            </select>
+            
+            <label>وقت العرض (توقيت 24 ساعة):</label>
+            <input type="text" id="airTime" placeholder="21:00">
+
+            <button class="btn" onclick="saveAnime()">حفظ البيانات</button>
+            <div id="animeStatus" class="status-msg"></div>
+        </div>
+
+        <!-- قسم إضافة حلقة -->
+        <div class="card">
+            <h2>إضافة حلقة جديدة</h2>
+            <label>معرف الأنمي (ID):</label>
+            <input type="text" id="epAnimeId" placeholder="مثال: solo">
+
+            <label>رقم الحلقة:</label>
+            <input type="number" id="epNum" placeholder="1">
+
+            <label>رابط دقة 1080p (اتركه فارغاً إن لم يتوفر):</label>
+            <input type="text" id="link1080" placeholder="https://stape.me/e/...">
+
+            <label>رابط دقة 720p (اتركه فارغاً إن لم يتوفر):</label>
+            <input type="text" id="link720" placeholder="https://stape.me/e/...">
+
+            <label>رابط دقة 480p (اتركه فارغاً إن لم يتوفر):</label>
+            <input type="text" id="link480" placeholder="https://stape.me/e/...">
+
+            <button class="btn btn-green" onclick="addEpisode()">إضافة الحلقة</button>
+            <div id="epStatus" class="status-msg"></div>
+        </div>
+
+        <!-- البحث وقائمة الأنميات -->
+        <div class="card">
+            <h2>قائمة الأنميات المضافة</h2>
+            <input type="text" id="searchBox" class="search-box" placeholder="بحث عن أنمي..." oninput="filterAnimes()">
+            <div id="animeList">جاري جلب البيانات...</div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "https://anime-api-proxy.ffaa11afaf.workers.dev";
+        const ADMIN_ID = 8649503815; // الآيدي الخاص بك للحماية
+        let allAnimes = [];
+
+        // تهيئة التليجرام ميني أب والتحقق من الأمان
+        const tg = window.Telegram.WebApp;
+        tg.expand(); // فتح الصفحة بكامل الشاشة
+
+        const user = tg.initDataUnsafe?.user;
+
+        // التحقق من الآيدي
+        if (user && user.id === ADMIN_ID) {
+            document.getElementById('app').style.display = 'block';
+            fetchAnimes();
+        } else {
+            // للتجربة أثناء التطوير إذا لم تكن فتحتها من تليجرام مباشرة
+            document.getElementById('app').style.display = 'block';
+            fetchAnimes();
+            // في الإنتاج النهائي يمكنك إزالة السطرين أعلاه وإبقاء السطر التالي فقط:
+            // document.getElementById('unauthorized').style.display = 'block';
+        }
+
+        function fetchAnimes() {
+            fetch(API_URL)
+            .then(res => res.json())
+            .then(data => {
+                allAnimes = data.record.animes || [];
+                renderAnimeList(allAnimes);
+            });
+        }
+
+        function renderAnimeList(list) {
+            const container = document.getElementById('animeList');
+            container.innerHTML = '';
+            if(list.length === 0) {
+                container.innerHTML = '<p style="color:#aaa; text-align:center;">لا توجد أنميات.</p>';
+                return;
+            }
+            list.forEach(anime => {
+                const epCount = anime.episodes ? anime.episodes.length : 0;
+                const item = document.createElement('div');
+                item.className = 'anime-item';
+                item.innerHTML = `
+                    <div class="anime-info">${anime.title} (${anime.id}) - ${epCount} حلقة</div>
+                    <div class="anime-actions">
+                        <button class="sm-btn btn-danger" onclick="deleteAnime('${anime.id}')">حذف</button>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function filterAnimes() {
+            const query = document.getElementById('searchBox').value.toLowerCase();
+            const filtered = allAnimes.filter(a => a.title.toLowerCase().includes(query) || a.id.toLowerCase().includes(query));
+            renderAnimeList(filtered);
+        }
+
+        function saveAnime() {
+            const id = document.getElementById('animeId').value.trim();
+            const title = document.getElementById('animeTitle').value.trim();
+            const poster = document.getElementById('animePoster').value.trim();
+            const airDay = parseInt(document.getElementById('airDay').value);
+            const airTime = document.getElementById('airTime').value.trim();
+            const status = document.getElementById('animeStatus');
+
+            if(!id || !title || !poster) {
+                status.innerText = "❌ يرجى ملء كافة الحقول الأساسية";
+                status.style.color = "#ff5252";
+                return;
+            }
+
+            status.innerText = "⏳ جاري الحفظ...";
+            status.style.color = "#ff9800";
+
+            // جلب البيانات والتحديث
+            fetch(API_URL)
+            .then(res => res.json())
+            .then(data => {
+                let animes = data.record.animes || [];
+                let existing = animes.find(a => a.id === id);
+                if(existing) {
+                    existing.title = title;
+                    existing.poster = poster;
+                    existing.airDay = airDay;
+                    existing.airTime = airTime;
+                } else {
+                    animes.push({ id, title, poster, airDay, airTime, episodes: [] });
+                }
+
+                // حفظ في JSONBin عبر Worker
+                saveToWorker(animes, () => {
+                    status.innerText = "✅ تم حفظ الأنمي بنجاح!";
+                    status.style.color = "#28a745";
+                    fetchAnimes();
+                });
+            });
+        }
+
+        function addEpisode() {
+            const id = document.getElementById('epAnimeId').value.trim();
+            const epNum = document.getElementById('epNum').value.trim();
+            const l1080 = document.getElementById('link1080').value.trim();
+            const l720 = document.getElementById('link720').value.trim();
+            const l480 = document.getElementById('link480').value.trim();
+            const status = document.getElementById('epStatus');
+
+            if(!id || !epNum) {
+                status.innerText = "❌ يرجى إدخال معرف الأنمي ورقم الحلقة";
+                status.style.color = "#ff5252";
+                return;
+            }
+
+            status.innerText = "⏳ جاري إضافة الحلقة...";
+            status.style.color = "#ff9800";
+
+            fetch(API_URL)
+            .then(res => res.json())
+            .then(data => {
+                let animes = data.record.animes || [];
+                let anime = animes.find(a => a.id === id);
+                if(!anime) {
+                    status.innerText = "❌ الأنمي غير موجود!";
+                    status.style.color = "#ff5252";
+                    return;
+                }
+
+                if(!anime.episodes) anime.episodes = [];
+                
+                let servers = [];
+                if(l1080) servers.push({ quality: "1080p", embedUrl: l1080 });
+                if(l720) servers.push({ quality: "720p", embedUrl: l720 });
+                if(l480) servers.push({ quality: "480p", embedUrl: l480 });
+
+                // حذف الحلقة لو كانت مضافة سابقاً وإعادة إضافتها
+                anime.episodes = anime.episodes.filter(e => e.ep != epNum);
+                anime.episodes.push({ ep: parseInt(epNum), servers });
+                anime.lastReset = Date.now(); // إعادة تعيين العداد تلقائياً
+
+                saveToWorker(animes, () => {
+                    status.innerText = "✅ تم إضافة الحلقة والترسيت بنجاح!";
+                    status.style.color = "#28a745";
+                    fetchAnimes();
+                });
+            });
+        }
+
+        function deleteAnime(id) {
+            if(!confirm(`هل أنت تأكد من حذف الأنمي (${id}) بالكامل؟`)) return;
+            fetch(API_URL)
+            .then(res => res.json())
+            .then(data => {
+                let animes = (data.record.animes || []).filter(a => a.id !== id);
+                saveToWorker(animes, () => {
+                    alert("تم الحذف بنجاح!");
+                    fetchAnimes();
+                });
+            });
+        }
+
+        function saveToWorker(animesData, onSuccess) {
+            // هنا نرسل الأمر للـ Worker بنفس طريقة البوت
+            fetch(API_URL, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ animes: animesData })
+            })
+            .then(res => res.json())
+            .then(() => onSuccess())
+            .catch(err => alert("حدث خطأ أثناء الحفظ"));
+        }
+    </script>
+</body>
+</html>
