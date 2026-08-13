@@ -2,14 +2,13 @@
 <html lang="ar" dir="rtl">
 <head>
     <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-90XKS2QEMF"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-90XKS2QEMF');
-</script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-90XKS2QEMF"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-90XKS2QEMF');
+    </script>
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -27,11 +26,15 @@
         .player-container { position: relative; padding-bottom: 56.25%; height: 0; }
         .player-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
         
+        /* زر التحميل الذكي */
+        .download-btn { display: none; background: #28a745; color: white; padding: 12px 25px; border-radius: 30px; font-weight: bold; margin-bottom: 20px; text-decoration: none; width: 90%; max-width: 300px; margin: 0 auto 15px auto; }
+        .download-btn:hover { background: #218838; }
+
         .ep-section { border: 1px solid #333; border-radius: 8px; background: #1a1a1a; padding: 10px; margin-bottom: 10px; }
         .ep-title { font-weight: bold; color: #ff9800; margin-bottom: 8px; display: block; border-bottom: 1px solid #333; padding-bottom: 5px; }
         .ep-links-container { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
         
-        .quality-btn { display: inline-block; background: #333; color: #fff; padding: 8px 14px; border-radius: 20px; font-size: 0.85rem; cursor: pointer; transition: 0.2s; border: 1px solid transparent; }
+        .quality-btn { display: inline-block; background: #333; color: #fff; padding: 8px 16px; border-radius: 20px; font-size: 0.9rem; cursor: pointer; transition: 0.2s; border: 1px solid transparent; }
         .quality-btn:hover { background: #444; }
         .quality-btn.active { background: #ff9800; color: #000; font-weight: bold; }
 
@@ -53,13 +56,16 @@
         <a href="index.html" class="back-btn">➔ العودة لقائمة الأنميات</a>
     </div>
 
-    <h1 id="animeHeaderTitle">اختر الحلقة والجودة للمشاهدة</h1>
+    <h1 id="animeHeaderTitle">جاري التحميل...</h1>
 
     <div class="player-box">
         <div class="player-container">
             <iframe id="videoPlayer" src="" allowfullscreen scrolling="no"></iframe>
         </div>
     </div>
+    
+    <!-- زر التحميل الذكي يظهر هنا -->
+    <a id="dynamicDownloadBtn" class="download-btn" href="#" target="_blank">تحميل الحلقة</a>
 
     <h3>قائمة الحلقات</h3>
     <div id="episodesList"><p class="loading-text">جاري تحميل الحلقات...</p></div>
@@ -77,20 +83,27 @@
     <footer>
         جميع الحقوق محفوظة © | <a href="https://t.me/anime_111PO" target="_blank">قناة التليكرام</a>
     </footer>
-    <footer>
-        ------------اعلان-------------
-    </footer>
 
     <script>
         const API_URL = "https://anime-api-proxy.ffaa11afaf.workers.dev";
         const listContainer = document.getElementById('episodesList');
         const iframe = document.getElementById('videoPlayer');
+        const downloadBtn = document.getElementById('dynamicDownloadBtn');
 
         const urlParams = new URLSearchParams(window.location.search);
         const currentAnimeId = urlParams.get('id') || 'mushoku';
 
         function loadVideo(url, element) {
+            // 1. تحديث المشغل
             iframe.src = url;
+            
+            // 2. تحديث زر التحميل الديناميكي
+            const encoded = btoa(url); // تشفير الرابط
+            downloadBtn.href = `download.html?link=${encoded}`;
+            downloadBtn.style.display = 'block';
+            downloadBtn.innerText = 'تحميل الحلقة (' + element.innerText + ')';
+
+            // 3. تحديث أزرار الجودات
             document.querySelectorAll('.quality-btn').forEach(btn => btn.classList.remove('active'));
             element.classList.add('active');
         }
@@ -127,6 +140,7 @@
                     
                     episode.servers.forEach(server => {
                         if (server.embedUrl && server.embedUrl.trim() !== "") {
+                            // إنشاء زر جودة فقط
                             const qualityBtn = document.createElement('a');
                             qualityBtn.className = 'quality-btn';
                             qualityBtn.innerText = server.quality;
@@ -139,83 +153,58 @@
                     listContainer.appendChild(epSection);
                 });
 
-                // تشغيل الحلقة الأخيرة تلقائياً عند فتح الصفحة
+                // تشغيل الحلقة الأخيرة تلقائياً
                 setTimeout(() => {
                     const allSections = document.querySelectorAll('.ep-section');
                     if (allSections.length > 0) {
                         const lastSection = allSections[allSections.length - 1];
                         const firstBtn = lastSection.querySelector('.quality-btn');
-                        if (firstBtn) {
-                            firstBtn.click();
-                        }
+                        if (firstBtn) firstBtn.click();
                     }
                 }, 500);
             }
 
-            // تشغيل العداد وتمرير lastReset للحساب الذكي
-            const targetDay = anime.airDay !== undefined ? anime.airDay : 0; 
-            const targetTime = anime.airTime || "20:00";
-            startAnimeCountdown(targetDay, targetTime, anime.lastReset);
+            startAnimeCountdown(anime.airDay, anime.airTime, anime.lastReset);
         })
         .catch(err => {
             listContainer.innerHTML = '<p style="color:red;">حدث خطأ أثناء تحميل البيانات</p>';
         });
 
-        // دالة العداد التنازلي الذكية
         function startAnimeCountdown(targetDay, targetTimeStr, lastReset) {
             const [hours, minutes] = targetTimeStr.split(":").map(Number);
-
             function getNextTargetDate() {
                 const now = new Date();
                 let target = new Date(now);
                 target.setHours(hours, minutes, 0, 0);
-
                 let dayDifference = (targetDay - now.getDay() + 7) % 7;
-                
-                // فحص إذا كان تم تصفير أو نشر حلقة اليوم مؤخراً
                 const resetRecently = lastReset && (now.getTime() - lastReset < 24 * 60 * 60 * 1000);
-
                 if ((dayDifference === 0 && now.getTime() >= target.getTime()) || (dayDifference === 0 && resetRecently)) {
                     dayDifference = 7;
                 }
                 target.setDate(now.getDate() + dayDifference);
                 return target.getTime();
             }
-
             let targetDate = getNextTargetDate();
-
             function updateTimer() {
                 const now = new Date().getTime();
                 let diff = targetDate - now;
-
-                if (diff <= 0) {
-                    targetDate = getNextTargetDate();
-                    diff = targetDate - now;
-                }
-
+                if (diff <= 0) { targetDate = getNextTargetDate(); diff = targetDate - now; }
                 const days = Math.floor(diff / (1000 * 60 * 60 * 24));
                 const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                 const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
                 const s = Math.floor((diff % (1000 * 60)) / 1000);
-
                 document.getElementById('days').innerText = String(days).padStart(2, '0');
                 document.getElementById('hours').innerText = String(h).padStart(2, '0');
                 document.getElementById('minutes').innerText = String(m).padStart(2, '0');
                 document.getElementById('seconds').innerText = String(s).padStart(2, '0');
             }
-
             setInterval(updateTimer, 1000);
             updateTimer();
         }
     </script>
     
-    <!-- Native Banner Ad -->
-    <div style="margin-top: 25px;">
-        <script async="async" data-cfasync="false" src="https://unprofessionalginger.com/c677bf44c6f94d1865a3c4c2a11f6675/invoke.js"></script>
-        <div id="container-c677bf44c6f94d1865a3c4c2a11f6675"></div>
-    </div>
-    
-    <!-- إعلانات Adsterra -->
+    <!-- إعلانات -->
+    <script async="async" data-cfasync="false" src="https://unprofessionalginger.com/c677bf44c6f94d1865a3c4c2a11f6675/invoke.js"></script>
     <script src="https://pl30586282.effectivecpmnetwork.com/91/de/a9/91dea99a2c0107ea84bef42b886dbbae.js"></script>
     <script src="https://pl30586730.effectivecpmnetwork.com/28/04/97/280497d1bc86158457d9ebfaec469991.js"></script>
 
