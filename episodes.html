@@ -13,6 +13,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>عرض الأنمي والحلقات</title>
+
+    <!-- مكتبة فك التشفير -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+
     <style>
         * { box-sizing: border-box; font-family: sans-serif; text-decoration: none; }
         body { background: #121212; color: white; margin: 0; padding: 10px; text-align: center; padding-bottom: 50px; }
@@ -26,7 +30,6 @@
         .player-container { position: relative; padding-bottom: 56.25%; height: 0; }
         .player-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
         
-        /* زر التحميل الذكي */
         .download-btn { display: none; background: #28a745; color: white; padding: 12px 25px; border-radius: 30px; font-weight: bold; margin-bottom: 20px; text-decoration: none; width: 90%; max-width: 300px; margin: 0 auto 15px auto; }
         .download-btn:hover { background: #218838; }
 
@@ -64,7 +67,6 @@
         </div>
     </div>
     
-    <!-- زر التحميل الذكي يظهر هنا -->
     <a id="dynamicDownloadBtn" class="download-btn" href="#" target="_blank">تحميل الحلقة</a>
 
     <h3>قائمة الحلقات</h3>
@@ -86,24 +88,32 @@
 
     <script>
         const API_URL = "https://anime-api-proxy.ffaa11afaf.workers.dev";
+        const SECRET_PASS = "18001900m"; // مفتاح فك التشفير
         const listContainer = document.getElementById('episodesList');
         const iframe = document.getElementById('videoPlayer');
         const downloadBtn = document.getElementById('dynamicDownloadBtn');
 
         const urlParams = new URLSearchParams(window.location.search);
-        const currentAnimeId = urlParams.get('id') || 'mushoku';
+        const currentAnimeId = urlParams.get('id');
+
+        function decryptData(encryptedStr) {
+            try {
+                const bytes = CryptoJS.AES.decrypt(encryptedStr, SECRET_PASS);
+                const decryptedText = bytes.toString(CryptoJS.enc.Utf8);
+                return JSON.parse(decryptedText);
+            } catch (e) {
+                console.error("خطأ التشفير:", e);
+                return null;
+            }
+        }
 
         function loadVideo(url, element) {
-            // 1. تحديث المشغل
             iframe.src = url;
-            
-            // 2. تحديث زر التحميل الديناميكي
-            const encoded = btoa(url); // تشفير الرابط
+            const encoded = btoa(url);
             downloadBtn.href = `download.html?link=${encoded}`;
             downloadBtn.style.display = 'block';
             downloadBtn.innerText = 'تحميل الحلقة (' + element.innerText + ')';
 
-            // 3. تحديث أزرار الجودات
             document.querySelectorAll('.quality-btn').forEach(btn => btn.classList.remove('active'));
             element.classList.add('active');
         }
@@ -111,11 +121,21 @@
         fetch(API_URL)
         .then(response => response.json())
         .then(data => {
-            const animes = data.record.animes || [];
+            let animes = [];
+
+            let rec = data.record ? data.record : data;
+            if (rec && rec.encryptedData) {
+                const decrypted = decryptData(rec.encryptedData);
+                animes = decrypted ? (decrypted.animes || []) : [];
+            } else if (rec && rec.animes) {
+                animes = rec.animes;
+            }
+
             const anime = animes.find(a => a.id === currentAnimeId);
 
             if (!anime) {
                 listContainer.innerHTML = '<p style="color:red;">الأنمي المطلوب غير موجود</p>';
+                document.getElementById('animeHeaderTitle').innerText = "خطأ في العرض";
                 return;
             }
 
@@ -140,7 +160,6 @@
                     
                     episode.servers.forEach(server => {
                         if (server.embedUrl && server.embedUrl.trim() !== "") {
-                            // إنشاء زر جودة فقط
                             const qualityBtn = document.createElement('a');
                             qualityBtn.className = 'quality-btn';
                             qualityBtn.innerText = server.quality;
@@ -153,24 +172,26 @@
                     listContainer.appendChild(epSection);
                 });
 
-                // تشغيل الحلقة الأخيرة تلقائياً
+                // تشغيل الحلقة الأولى تلقائياً
                 setTimeout(() => {
                     const allSections = document.querySelectorAll('.ep-section');
                     if (allSections.length > 0) {
-                        const lastSection = allSections[allSections.length - 1];
-                        const firstBtn = lastSection.querySelector('.quality-btn');
+                        const firstSection = allSections[0];
+                        const firstBtn = firstSection.querySelector('.quality-btn');
                         if (firstBtn) firstBtn.click();
                     }
-                }, 500);
+                }, 300);
             }
 
             startAnimeCountdown(anime.airDay, anime.airTime, anime.lastReset);
         })
         .catch(err => {
+            console.error(err);
             listContainer.innerHTML = '<p style="color:red;">حدث خطأ أثناء تحميل البيانات</p>';
         });
 
         function startAnimeCountdown(targetDay, targetTimeStr, lastReset) {
+            if (!targetTimeStr) return;
             const [hours, minutes] = targetTimeStr.split(":").map(Number);
             function getNextTargetDate() {
                 const now = new Date();
