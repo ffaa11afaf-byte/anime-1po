@@ -136,6 +136,7 @@
 
         function decryptData(encryptedStr) {
             try {
+                if(!encryptedStr) return null;
                 const bytes = CryptoJS.AES.decrypt(encryptedStr, SECRET_PASS);
                 const text = bytes.toString(CryptoJS.enc.Utf8);
                 return text ? JSON.parse(text) : null;
@@ -153,8 +154,6 @@
                 if (rec && rec.encryptedData) {
                     const decrypted = decryptData(rec.encryptedData);
                     allAnimes = decrypted ? (decrypted.animes || []) : [];
-                } else if (rec && rec.animes) {
-                    allAnimes = rec.animes;
                 } else {
                     allAnimes = [];
                 }
@@ -162,7 +161,7 @@
                 renderAnimeList(allAnimes);
             })
             .catch(err => {
-                document.getElementById('animeList').innerHTML = '<p style="color:red; text-align:center;">حدث خطأ في الاتصال</p>';
+                document.getElementById('animeList').innerHTML = '<p style="color:#aaa; text-align:center;">لا توجد أنميات مضافة حالياً.</p>';
             });
         }
 
