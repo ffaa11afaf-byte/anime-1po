@@ -32,6 +32,11 @@
         /* الإعلانات العلوية والسفلية */
         .ad-container { margin: 10px auto; text-align: center; width: 100%; overflow: hidden; }
 
+        /* شريط البحث الذكي */
+        .search-container { position: relative; width: 100%; margin-bottom: 15px; }
+        .search-input { width: 100%; padding: 12px 15px; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 8px; color: #fff; font-size: 0.9rem; transition: 0.3s; outline: none; text-align: right; }
+        .search-input:focus { border-color: #ff9800; box-shadow: 0 0 8px rgba(255, 152, 0, 0.2); }
+
         /* 1. السلايدر العلوي الذكي */
         .slider-wrapper { position: relative; width: 100%; overflow: hidden; border-radius: 12px; margin-bottom: 25px; background: #1a1a1a; border: 1px solid #2a2a2a; touch-action: pan-y; user-select: none; }
         .slider-container { display: flex; transition: transform 0.4s ease-out; width: 100%; cursor: grab; }
@@ -71,6 +76,7 @@
         footer a { color: #ff9800; font-weight: bold; }
 
         .loading-text { color: #ff9800; font-size: 0.95rem; grid-column: 1 / -1; margin: 30px 0; text-align: center; }
+        .coming-soon-msg { color: #ff9800; font-size: 1rem; font-weight: bold; grid-column: 1 / -1; padding: 30px 10px; text-align: center; background: #1a1a1a; border: 1px dashed #ff9800; border-radius: 8px; margin: 10px 0; }
     </style>
 </head>
 <body>
@@ -98,8 +104,13 @@
             <div class="continue-grid" id="continueGrid"></div>
         </div>
 
-        <!-- 3. الإصدارات الحديثة -->
+        <!-- 3. شريط البحث وقسم الإصدارات الحديثة -->
         <div class="section-title">الإصدارات الحديثة</div>
+
+        <div class="search-container">
+            <input type="text" id="searchInput" class="search-input" placeholder="🔍 ابحث عن أنمي..." oninput="handleSmartSearch()">
+        </div>
+
         <div class="anime-grid" id="animeGrid">
             <p class="loading-text">جاري تحميل قائمة الأنميات...</p>
         </div>
@@ -120,6 +131,7 @@
         const API_URL = "https://anime-api-proxy.ffaa11afaf.workers.dev";
         const SECRET_PASS = "18001900m";
         
+        let allAnimesList = [];
         let currentSlide = 0;
         let slideInterval;
         let resumeTimeout;
@@ -141,29 +153,55 @@
         fetch(API_URL)
         .then(res => res.json())
         .then(data => {
-            let animes = [];
             let sliderIds = [];
             let rec = data.record ? data.record : data;
 
             if (rec && rec.encryptedData) {
                 const decrypted = decryptData(rec.encryptedData);
                 if(decrypted) {
-                    animes = decrypted.animes || [];
+                    allAnimesList = decrypted.animes || [];
                     sliderIds = decrypted.sliderAnimes || [];
                 }
             } else if (rec && rec.animes) {
-                animes = rec.animes;
+                allAnimesList = rec.animes;
                 sliderIds = rec.sliderAnimes || [];
             }
 
-            setupSlider(animes, sliderIds);
-            setupContinueWatching(animes);
-            renderAnimeGrid(animes);
+            setupSlider(allAnimesList, sliderIds);
+            setupContinueWatching(allAnimesList);
+            renderAnimeGrid(allAnimesList);
         })
         .catch(err => {
             console.error(err);
             document.getElementById('animeGrid').innerHTML = '<p style="color:red; grid-column:1/-1; text-align:center;">حدث خطأ أثناء جلب الأنميات</p>';
         });
+
+        // دالة تنظيف النص للبحث الذكي
+        function normalizeText(str) {
+            if (!str) return "";
+            return str.toString()
+                      .toLowerCase()
+                      .replace(/[\-:_,\s]/g, ""); // إزالة الرموز والمسافات للتطابق المرن
+        }
+
+        // دالة معالجة البحث الذكي
+        function handleSmartSearch() {
+            const rawQuery = document.getElementById('searchInput').value.trim();
+            const query = normalizeText(rawQuery);
+
+            if (!query) {
+                renderAnimeGrid(allAnimesList);
+                return;
+            }
+
+            const filtered = allAnimesList.filter(anime => {
+                const normTitle = normalizeText(anime.title);
+                const normId = normalizeText(anime.id);
+                return normTitle.includes(query) || normId.includes(query);
+            });
+
+            renderAnimeGrid(filtered, true);
+        }
 
         function setupSlider(animes, sliderIds) {
             const sliderWrapper = document.getElementById('sliderWrapper');
@@ -235,7 +273,6 @@
             if(resumeTimeout) clearTimeout(resumeTimeout);
             currentSlide = index;
             updateSliderPosition();
-            // تم تقليل وقت العودة للتبديل التلقائي إلى 2.5 ثانية (2500 ميلي ثانية)
             resumeTimeout = setTimeout(() => {
                 startAutoSlide();
             }, 2500);
@@ -308,9 +345,10 @@
                 const anime = animes.find(a => a.id === item.animeId);
                 if(anime && count < 5) {
                     count++;
-                    const percent = item.progress || 0;
+                    const percent = item.progress || 100;
                     const card = document.createElement('a');
-                    card.href = `episodes.html?id=${anime.id}`;
+                    // التوجيه المباشر للحلقة من الرابط
+                    card.href = `episodes.html?id=${anime.id}&ep=${item.epNum}`;
                     card.className = 'continue-card';
                     card.innerHTML = `
                         <img src="${anime.poster}" class="continue-img" alt="${anime.title}">
@@ -331,12 +369,16 @@
             }
         }
 
-        function renderAnimeGrid(animes) {
+        function renderAnimeGrid(animes, isSearching = false) {
             const animeGrid = document.getElementById('animeGrid');
             animeGrid.innerHTML = '';
 
             if (animes.length === 0) {
-                animeGrid.innerHTML = '<p class="loading-text">لا توجد أنميات مضافة حالياً</p>';
+                if (isSearching) {
+                    animeGrid.innerHTML = '<div class="coming-soon-msg">سيضاف في الوقت القريب 🚀</div>';
+                } else {
+                    animeGrid.innerHTML = '<p class="loading-text">لا توجد أنميات مضافة حالياً</p>';
+                }
                 return;
             }
 
