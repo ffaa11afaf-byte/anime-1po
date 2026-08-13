@@ -76,12 +76,12 @@
         .progress-bar-bg { width: 100%; height: 3px; background: #333; margin-top: 6px; border-radius: 2px; }
         .progress-bar-fill { height: 100%; background: #ff9800; border-radius: 2px; }
 
-        /* 3. شبكة الأنميات الأساسية */
+        /* 3. شبكة الأنميات الأساسية - تم تعديل أبعاد البوستر لظهور الصورة بالكامل دون قص */
         .anime-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); gap: 12px; width: 100%; }
         .anime-card { background: #1a1a1a; border: 1px solid #252525; border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; transition: 0.3s; cursor: pointer; text-decoration: none; position: relative; }
         .anime-card:hover { border-color: #ff9800; transform: translateY(-3px); }
-        .poster-box { position: relative; width: 100%; height: 190px; }
-        .anime-poster { width: 100%; height: 100%; object-fit: cover; }
+        .poster-box { position: relative; width: 100%; aspect-ratio: 3 / 4.2; background: #111; }
+        .anime-poster { width: 100%; height: 100%; object-fit: cover; object-position: top center; }
         .status-tag { position: absolute; top: 6px; right: 6px; background: #28a745; color: #fff; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
         .ep-tag { position: absolute; bottom: 6px; right: 6px; background: rgba(0,0,0,0.75); color: #fff; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; border: 1px solid #444; }
         .anime-title { font-size: 0.85rem; color: #fff; padding: 8px 5px; text-align: center; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -201,7 +201,6 @@
                       .replace(/[\-:_,\s]/g, "");
         }
 
-        // دالة البحث المباشر المنبثق تحت الشريط
         function handleLiveSearch() {
             const searchInput = document.getElementById('searchInput');
             const dropdown = document.getElementById('searchDropdown');
@@ -247,7 +246,6 @@
             dropdown.style.display = 'block';
         }
 
-        // إغلاق القائمة المنسدلة عند النقرة خارجها
         document.addEventListener('click', function(e) {
             const container = document.querySelector('.search-container');
             const dropdown = document.getElementById('searchDropdown');
