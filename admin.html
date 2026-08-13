@@ -10,9 +10,13 @@
         * { box-sizing: border-box; font-family: sans-serif; }
         body { background: #121212; color: #fff; margin: 0; padding: 15px; direction: rtl; }
         
-        /* تصميم صفحة الخطأ التمويهية */
+        /* شاشة التمويه الخارجية */
         #errorOverlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; color: #444; font-family: monospace; font-size: 1rem; padding: 15px; text-align: left; direction: ltr; z-index: 999999; }
         
+        /* شاشة تسجيل الدخول بكلمة السر */
+        #loginBox { display: none; max-width: 350px; margin: 80px auto 0 auto; background: #1a1a1a; padding: 25px; border-radius: 12px; border: 1px solid #333; text-align: center; }
+        #loginBox h3 { color: #ff9800; margin-top: 0; }
+
         .container { max-width: 600px; margin: 0 auto; }
         h1, h2 { color: #ff9800; text-align: center; margin-bottom: 15px; font-size: 1.3rem; }
         
@@ -37,10 +41,19 @@
 </head>
 <body>
 
-    <!-- الواجهة التمويهية عند الدخول غير المصرح -->
+    <!-- التمويه في حال الفتح من متصفح خارجي عادي -->
     <div id="errorOverlay">Error</div>
 
-    <!-- التطبيق الأساسي -->
+    <!-- شاشة إدخال رمز الحماية -->
+    <div id="loginBox">
+        <h3>🔒 رمز الحماية</h3>
+        <p style="font-size:0.8rem; color:#aaa;">أدخل رمز المرور للوصول للوحة التحكم</p>
+        <input type="password" id="passInput" placeholder="أدخل الرمز هنا">
+        <button class="btn" onclick="checkPass()">دخول</button>
+        <div id="loginErr" style="color:#ff5252; font-size:0.8rem; margin-top:8px;"></div>
+    </div>
+
+    <!-- لوحة التحكم الأساسية -->
     <div id="app" class="container">
         <h1>🛠️ لوحة تحكم الأنميات</h1>
 
@@ -106,25 +119,45 @@
 
     <script>
         const API_URL = "https://anime-api-proxy.ffaa11afaf.workers.dev";
-        const ADMIN_ID = 8649503815; // آيدي حسابك حصراً
+        const SECRET_PASS = "18001900m"; // 🔑 كلمة السر الخاصة بك (يمكنك تغييرها كما تحب)
+        const ADMIN_ID = 8649503815;
         let allAnimes = [];
 
-        // تهيئة التليجرام ميني أب والتحقق الصارم من الأمان
         const tg = window.Telegram.WebApp;
         tg.expand();
 
         const user = tg.initDataUnsafe?.user;
 
-        // 🔒 القفل الأمني المحكم والتمويه:
-        if (user && user.id === ADMIN_ID) {
-            document.getElementById('app').style.display = 'block';
-            fetchAnimes();
+        // التحقق من البيئة
+        if (user || window.Telegram.WebApp.initData !== "") {
+            // فتحت من تليجرام
+            if (user && user.id === ADMIN_ID) {
+                // دخول مباشر إذا جلب الآيدي بنجاح
+                unlockApp();
+            } else {
+                // إظهار مربع الرمز في حال عدم توفر الآيدي بالبيانات الأولية
+                document.getElementById('loginBox').style.display = 'block';
+            }
         } else {
-            // تدمير واجهة الأدمن وإظهار صفحة فارغة بكلمة Error فقط
-            const app = document.getElementById('app');
-            if(app) app.remove();
+            // فتحت من متصفح خارجي عادي -> إظهار Error تمويهي
+            document.getElementById('app').remove();
             document.title = "Error";
             document.getElementById('errorOverlay').style.display = 'block';
+        }
+
+        function checkPass() {
+            const input = document.getElementById('passInput').value;
+            if(input === SECRET_PASS) {
+                document.getElementById('loginBox').style.display = 'none';
+                unlockApp();
+            } else {
+                document.getElementById('loginErr').innerText = "❌ رمز المرور غير صحيح";
+            }
+        }
+
+        function unlockApp() {
+            document.getElementById('app').style.display = 'block';
+            fetchAnimes();
         }
 
         function fetchAnimes() {
