@@ -98,9 +98,11 @@
 
         function decryptData(encryptedStr) {
             try {
+                if(!encryptedStr) return null;
                 const bytes = CryptoJS.AES.decrypt(encryptedStr, SECRET_PASS);
                 const decryptedText = bytes.toString(CryptoJS.enc.Utf8);
-                return JSON.parse(decryptedText);
+                if(!decryptedText) return null;
+                return JSON.parse(decodeURIComponent(decryptedText));
             } catch (e) {
                 console.error("خطأ التشفير:", e);
                 return null;
