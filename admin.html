@@ -119,7 +119,7 @@
 
     <script>
         const API_URL = "https://anime-api-proxy.ffaa11afaf.workers.dev";
-        const SECRET_PASS = "18001900m"; // 🔑 كلمة السر الخاصة بك (يمكنك تغييرها كما تحب)
+        const SECRET_PASS = "18001900m";
         const ADMIN_ID = 8649503815;
         let allAnimes = [];
 
@@ -128,18 +128,13 @@
 
         const user = tg.initDataUnsafe?.user;
 
-        // التحقق من البيئة
         if (user || window.Telegram.WebApp.initData !== "") {
-            // فتحت من تليجرام
             if (user && user.id === ADMIN_ID) {
-                // دخول مباشر إذا جلب الآيدي بنجاح
                 unlockApp();
             } else {
-                // إظهار مربع الرمز في حال عدم توفر الآيدي بالبيانات الأولية
                 document.getElementById('loginBox').style.display = 'block';
             }
         } else {
-            // فتحت من متصفح خارجي عادي -> إظهار Error تمويهي
             document.getElementById('app').remove();
             document.title = "Error";
             document.getElementById('errorOverlay').style.display = 'block';
@@ -164,8 +159,11 @@
             fetch(API_URL)
             .then(res => res.json())
             .then(data => {
-                allAnimes = data.record.animes || [];
+                allAnimes = data.record ? (data.record.animes || []) : (data.animes || []);
                 renderAnimeList(allAnimes);
+            })
+            .catch(err => {
+                document.getElementById('animeList').innerHTML = '<p style="color:red; text-align:center;">حدث خطأ في الاتصال بالخادم</p>';
             });
         }
 
@@ -173,7 +171,7 @@
             const container = document.getElementById('animeList');
             container.innerHTML = '';
             if(list.length === 0) {
-                container.innerHTML = '<p style="color:#aaa; text-align:center;">لا توجد أنميات.</p>';
+                container.innerHTML = '<p style="color:#aaa; text-align:center;">لا توجد أنميات مضافة حالياً.</p>';
                 return;
             }
             list.forEach(anime => {
@@ -216,7 +214,7 @@
             fetch(API_URL)
             .then(res => res.json())
             .then(data => {
-                let animes = data.record.animes || [];
+                let animes = data.record ? (data.record.animes || []) : (data.animes || []);
                 let existing = animes.find(a => a.id === id);
                 if(existing) {
                     existing.title = title;
@@ -255,7 +253,7 @@
             fetch(API_URL)
             .then(res => res.json())
             .then(data => {
-                let animes = data.record.animes || [];
+                let animes = data.record ? (data.record.animes || []) : (data.animes || []);
                 let anime = animes.find(a => a.id === id);
                 if(!anime) {
                     status.innerText = "❌ الأنمي غير موجود!";
@@ -287,7 +285,8 @@
             fetch(API_URL)
             .then(res => res.json())
             .then(data => {
-                let animes = (data.record.animes || []).filter(a => a.id !== id);
+                let animes = data.record ? (data.record.animes || []) : (data.animes || []);
+                animes = animes.filter(a => a.id !== id);
                 saveToWorker(animes, () => {
                     alert("تم الحذف بنجاح!");
                     fetchAnimes();
@@ -303,7 +302,9 @@
             })
             .then(res => res.json())
             .then(() => onSuccess())
-            .catch(err => alert("حدث خطأ أثناء الحفظ"));
+            .catch(err => {
+                alert("حدث خطأ أثناء الحفظ");
+            });
         }
     </script>
 </body>
