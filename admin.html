@@ -20,6 +20,7 @@
         input:focus, select:focus { border-color: #ff9800; outline: none; }
         .btn { display: block; width: 100%; background: #ff9800; color: #000; font-weight: bold; padding: 12px; border: none; border-radius: 8px; margin-top: 12px; cursor: pointer; font-size: 0.95rem; text-align: center; }
         .btn-green { background: #28a745; color: #fff; }
+        .btn-blue { background: #007bff; color: #fff; }
         .btn-danger { background: #dc3545; color: #fff; }
         .search-box { margin-bottom: 15px; }
         .anime-item { background: #222; border: 1px solid #333; padding: 10px; border-radius: 6px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
@@ -28,6 +29,7 @@
         .sm-btn { padding: 5px 10px; font-size: 0.75rem; border-radius: 4px; border: none; cursor: pointer; }
         #app { display: none; }
         .status-msg { text-align: center; font-size: 0.85rem; margin-top: 8px; font-weight: bold; }
+        .hint-text { font-size: 0.75rem; color: #888; margin-bottom: 8px; display: block; }
     </style>
 </head>
 <body>
@@ -44,6 +46,16 @@
 
     <div id="app" class="container">
         <h1>🛠️ لوحة تحكم الأنميات</h1>
+
+        <!-- قسم جديد: تخصيص أنميات السلايدر العلوي -->
+        <div class="card">
+            <h2>🎠 تحديد أنميات السلايدر العلوي (9 أنميات كحد أقصى)</h2>
+            <label>معرفات الأنميات (IDs) مفصولة بفارزة ( , ):</label>
+            <span class="hint-text">اكتب معرف كل أنمي تفصل بينه وبين التالي بفارزة انجليزية. مثال: solo, rezero, mushoku</span>
+            <input type="text" id="sliderIdsInput" placeholder="solo, rezero, mushoku">
+            <button class="btn btn-blue" onclick="saveSliderAnimes()">حفظ قائمة السلايدر</button>
+            <div id="sliderStatus" class="status-msg"></div>
+        </div>
 
         <div class="card">
             <h2>إضافة / تحديث أنمي</h2>
@@ -99,6 +111,7 @@
         const SECRET_PASS = "18001900m";
         const ADMIN_ID = 8649503815;
         let allAnimes = [];
+        let sliderAnimes = [];
 
         const tg = window.Telegram.WebApp;
         tg.expand();
@@ -156,13 +169,23 @@
                 
                 if (rec && rec.encryptedData) {
                     const decrypted = decryptData(rec.encryptedData);
-                    allAnimes = decrypted ? (decrypted.animes || []) : [];
+                    if(decrypted) {
+                        allAnimes = decrypted.animes || [];
+                        sliderAnimes = decrypted.sliderAnimes || [];
+                    } else {
+                        allAnimes = [];
+                        sliderAnimes = [];
+                    }
                 } else if (rec && rec.animes) {
                     allAnimes = rec.animes;
+                    sliderAnimes = rec.sliderAnimes || [];
                 } else {
                     allAnimes = [];
+                    sliderAnimes = [];
                 }
                 
+                // ملء حقل السلايدر بالأنميات المحفوظة حالياً
+                document.getElementById('sliderIdsInput').value = sliderAnimes.join(', ');
                 renderAnimeList(allAnimes);
             })
             .catch(err => {
@@ -197,6 +220,31 @@
             renderAnimeList(filtered);
         }
 
+        function saveSliderAnimes() {
+            const rawInput = document.getElementById('sliderIdsInput').value.trim();
+            const status = document.getElementById('sliderStatus');
+
+            // تحويل النص لمصفوفة معرفات وتنظيفها من المسافات الزائدة
+            let ids = rawInput.split(',')
+                              .map(id => id.trim().toLowerCase())
+                              .filter(id => id !== "");
+
+            // اقتطاع القائمة لتأخذ أول 9 فقط
+            if(ids.length > 9) {
+                ids = ids.slice(0, 9);
+            }
+
+            sliderAnimes = ids;
+            status.innerText = "⏳ جاري حفظ قائمة السلايدر...";
+            status.style.color = "#ff9800";
+
+            saveToWorker(allAnimes, sliderAnimes, () => {
+                status.innerText = "✅ تم حفظ قائمة السلايدر بنجاح!";
+                status.style.color = "#28a745";
+                fetchAnimes();
+            });
+        }
+
         function saveAnime() {
             const id = document.getElementById('animeId').value.trim();
             const title = document.getElementById('animeTitle').value.trim();
@@ -224,7 +272,7 @@
                 allAnimes.push({ id, title, poster, airDay, airTime, episodes: [] });
             }
 
-            saveToWorker(allAnimes, () => {
+            saveToWorker(allAnimes, sliderAnimes, () => {
                 status.innerText = "✅ تم حفظ وتشفير الأنمي بنجاح!";
                 status.style.color = "#28a745";
                 fetchAnimes();
@@ -265,7 +313,7 @@
             anime.episodes.push({ ep: parseInt(epNum), servers });
             anime.lastReset = Date.now();
 
-            saveToWorker(allAnimes, () => {
+            saveToWorker(allAnimes, sliderAnimes, () => {
                 status.innerText = "✅ تم إضافة الحلقة وتشفير البيانات بنجاح!";
                 status.style.color = "#28a745";
                 fetchAnimes();
@@ -275,14 +323,17 @@
         function deleteAnime(id) {
             if(!confirm(`هل أنت تأكد من حذف الأنمي (${id}) بالكامل؟`)) return;
             allAnimes = allAnimes.filter(a => a.id !== id);
-            saveToWorker(allAnimes, () => {
+            // كذلك حذفه من قائمة السلايدر إذا كان موجوداً فيها
+            sliderAnimes = sliderAnimes.filter(sId => sId !== id);
+
+            saveToWorker(allAnimes, sliderAnimes, () => {
                 alert("تم الحذف بنجاح!");
                 fetchAnimes();
             });
         }
 
-        function saveToWorker(animesData, onSuccess) {
-            const encrypted = encryptData({ animes: animesData });
+        function saveToWorker(animesData, sliderData, onSuccess) {
+            const encrypted = encryptData({ animes: animesData, sliderAnimes: sliderData });
             fetch(API_URL, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
