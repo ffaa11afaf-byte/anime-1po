@@ -41,12 +41,18 @@
         .quality-btn:hover { background: #444; }
         .quality-btn.active { background: #ff9800; color: #000; font-weight: bold; }
 
-        .timer-card { border: 1px solid #ff9800; border-radius: 8px; background: #1a1500; padding: 15px; margin-top: 20px; }
-        .timer-title { color: #ff9800; font-size: 0.95rem; font-weight: bold; margin-bottom: 10px; }
-        .timer-display { display: flex; justify-content: center; gap: 10px; direction: ltr; }
-        .timer-unit { background: #222; border: 1px solid #444; padding: 8px; border-radius: 6px; min-width: 55px; }
-        .timer-num { font-size: 1.2rem; font-weight: bold; color: #fff; display: block; }
-        .timer-label { font-size: 0.7rem; color: #aaa; margin-top: 2px; display: block; }
+        /* البطاقة المصغرة والمدمجة للعداد والتاريخ */
+        .compact-info-card { background: rgba(255, 152, 0, 0.08); border: 1px solid rgba(255, 152, 0, 0.3); border-radius: 10px; padding: 10px 14px; margin: 20px auto; max-width: 500px; text-align: right; font-size: 0.82rem; }
+        .info-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; color: #ddd; }
+        .info-highlight { color: #ff9800; font-weight: bold; }
+        .info-date { color: #bbb; font-size: 0.78rem; }
+        
+        .compact-timer-box { background: rgba(0, 0, 0, 0.4); border: 1px solid #2a2a2a; border-radius: 6px; padding: 6px 10px; display: flex; align-items: center; justify-content: space-between; direction: rtl; }
+        .timer-label-sm { color: #aaa; font-size: 0.75rem; }
+        .timer-values-sm { display: flex; gap: 4px; direction: ltr; font-family: monospace; font-size: 0.85rem; font-weight: bold; color: #ff9800; }
+        .timer-unit-sm { background: #1a1a1a; padding: 2px 6px; border-radius: 4px; border: 1px solid #333; }
+
+        .completed-badge { background: rgba(40, 167, 69, 0.15); border: 1px solid #28a745; color: #28a745; padding: 10px; border-radius: 8px; font-weight: bold; font-size: 0.85rem; text-align: center; margin: 20px auto; max-width: 500px; }
 
         footer { margin-top: 30px; font-size: 0.85rem; color: #888; }
         footer a { color: #ff9800; font-weight: bold; }
@@ -63,7 +69,6 @@
 
     <div class="player-box">
         <div class="player-container">
-            <!-- تم إرجاع الـ iframe عادي وبدون قيود sandbox -->
             <iframe id="videoPlayer" src="" allowfullscreen scrolling="no"></iframe>
         </div>
     </div>
@@ -73,15 +78,8 @@
     <h3>قائمة الحلقات</h3>
     <div id="episodesList"><p class="loading-text">جاري تحميل الحلقات...</p></div>
 
-    <div class="timer-card">
-        <div class="timer-title">موعد نزول الحلقة القادمة:</div>
-        <div class="timer-display" id="countdown">
-            <div class="timer-unit"><span class="timer-num" id="days">00</span><span class="timer-label">أيام</span></div>
-            <div class="timer-unit"><span class="timer-num" id="hours">00</span><span class="timer-label">ساعات</span></div>
-            <div class="timer-unit"><span class="timer-num" id="minutes">00</span><span class="timer-label">دقائق</span></div>
-            <div class="timer-unit"><span class="timer-num" id="seconds">00</span><span class="timer-label">ثواني</span></div>
-        </div>
-    </div>
+    <!-- البطاقة المدمجة الذكية للعداد والمعلومات -->
+    <div id="countdownContainer"></div>
 
     <footer>
         جميع الحقوق محفوظة © | <a href="https://t.me/anime_111PO" target="_blank">قناة التليكرام</a>
@@ -96,6 +94,8 @@
 
         const urlParams = new URLSearchParams(window.location.search);
         const currentAnimeId = urlParams.get('id');
+
+        const daysArabic = ["الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
 
         function decryptData(encryptedStr) {
             try {
@@ -167,6 +167,8 @@
             document.title = `${anime.title} - الحلقات`;
             listContainer.innerHTML = '';
 
+            const currentEpCount = anime.episodes ? anime.episodes.length : 0;
+
             if (!anime.episodes || anime.episodes.length === 0) {
                 listContainer.innerHTML = '<p class="loading-text">لا توجد حلقات مضافة حالياً لهذا الأنمي</p>';
             } else {
@@ -195,46 +197,98 @@
                     epSection.appendChild(linksContainer);
                     listContainer.appendChild(epSection);
                 });
-
-                // تم إلغاء كود التشغيل التلقائي بالكامل؛ المشاهد يختار بنفسه
             }
 
-            startAnimeCountdown(anime.airDay, anime.airTime, anime.lastReset);
+            // تشغيل دالة بناء العداد التفاعلي والمدمج
+            setupSmartCountdown(anime, currentEpCount);
         })
         .catch(err => {
             console.error(err);
             listContainer.innerHTML = '<p style="color:red;">حدث خطأ أثناء تحميل البيانات</p>';
         });
 
-        function startAnimeCountdown(targetDay, targetTimeStr, lastReset) {
-            if (!targetTimeStr) return;
-            const [hours, minutes] = targetTimeStr.split(":").map(Number);
-            function getNextTargetDate() {
+        function setupSmartCountdown(anime, currentEpCount) {
+            const container = document.getElementById('countdownContainer');
+            const totalEps = anime.totalEps || 0;
+            const nextEpNum = currentEpCount + 1;
+
+            // إذا أكتملت كل الحلقات المتوقعة
+            if (totalEps > 0 && currentEpCount >= totalEps) {
+                container.innerHTML = `<div class="completed-badge">🎉 الأنمي مكتمل بالكامل (${currentEpCount}/${totalEps} حلقة)</div>`;
+                return;
+            }
+
+            if (anime.airDay === undefined || !anime.airTime) return;
+
+            const [hours, minutes] = anime.airTime.split(":").map(Number);
+
+            function getNextTarget() {
                 const now = new Date();
                 let target = new Date(now);
                 target.setHours(hours, minutes, 0, 0);
-                let dayDifference = (targetDay - now.getDay() + 7) % 7;
-                const resetRecently = lastReset && (now.getTime() - lastReset < 24 * 60 * 60 * 1000);
-                if ((dayDifference === 0 && now.getTime() >= target.getTime()) || (dayDifference === 0 && resetRecently)) {
-                    dayDifference = 7;
+
+                let dayDiff = (anime.airDay - now.getDay() + 7) % 7;
+                const resetRecently = anime.lastReset && (now.getTime() - anime.lastReset < 24 * 60 * 60 * 1000);
+
+                if ((dayDiff === 0 && now.getTime() >= target.getTime()) || (dayDiff === 0 && resetRecently)) {
+                    dayDiff = 7;
                 }
-                target.setDate(now.getDate() + dayDifference);
-                return target.getTime();
+                target.setDate(now.getDate() + dayDiff);
+                return target;
             }
-            let targetDate = getNextTargetDate();
+
+            let targetDateObj = getNextTarget();
+            let targetDayName = daysArabic[targetDateObj.getDay()];
+            let formattedDate = `${targetDateObj.getFullYear()}/${targetDateObj.getMonth()+1}/${targetDateObj.getDate()}`;
+
+            const totalText = totalEps > 0 ? `من المتوقع أن يبلغ الأنمي <span class="info-highlight">${totalEps} حلقة</span> 📺` : 'أنمي مستمر 📺';
+
+            container.innerHTML = `
+                <div class="compact-info-card">
+                    <div class="info-row">
+                        <div>${totalText}</div>
+                        <div>الحلقة <span class="info-highlight">${nextEpNum}</span> 🚀</div>
+                    </div>
+                    <div class="info-row info-date">
+                        🗓️ تصدر يوم ${targetDayName}، ${formattedDate} الساعة ${anime.airTime}
+                    </div>
+                    <div class="compact-timer-box">
+                        <span class="timer-label-sm">⏳ المتبقي للعرض:</span>
+                        <div class="timer-values-sm">
+                            <span class="timer-unit-sm" id="cDays">00d</span> :
+                            <span class="timer-unit-sm" id="cHours">00h</span> :
+                            <span class="timer-unit-sm" id="cMins">00m</span> :
+                            <span class="timer-unit-sm" id="cSecs">00s</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+
             function updateTimer() {
                 const now = new Date().getTime();
-                let diff = targetDate - now;
-                if (diff <= 0) { targetDate = getNextTargetDate(); diff = targetDate - now; }
-                const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                let diff = targetDateObj.getTime() - now;
+
+                if (diff <= 0) {
+                    targetDateObj = getNextTarget();
+                    diff = targetDateObj.getTime() - now;
+                }
+
+                const d = Math.floor(diff / (1000 * 60 * 60 * 24));
                 const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                 const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
                 const s = Math.floor((diff % (1000 * 60)) / 1000);
-                document.getElementById('days').innerText = String(days).padStart(2, '0');
-                document.getElementById('hours').innerText = String(h).padStart(2, '0');
-                document.getElementById('minutes').innerText = String(m).padStart(2, '0');
-                document.getElementById('seconds').innerText = String(s).padStart(2, '0');
+
+                const elD = document.getElementById('cDays');
+                const elH = document.getElementById('cHours');
+                const elM = document.getElementById('cMins');
+                const elS = document.getElementById('cSecs');
+
+                if (elD) elD.innerText = String(d).padStart(2, '0') + 'd';
+                if (elH) elH.innerText = String(h).padStart(2, '0') + 'h';
+                if (elM) elM.innerText = String(m).padStart(2, '0') + 'm';
+                if (elS) elS.innerText = String(s).padStart(2, '0') + 's';
             }
+
             setInterval(updateTimer, 1000);
             updateTimer();
         }
