@@ -29,10 +29,23 @@
         .container { max-width: 1000px; margin: 0 auto; width: 100%; text-align: right; }
         .section-title { font-size: 1.1rem; color: #fff; margin: 20px 0 10px 0; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
 
-        /* شريط البحث الذكي */
-        .search-container { position: relative; width: 100%; margin: 10px 0 20px 0; }
+        /* شريط البحث الذكي والنتائج المنبثقة */
+        .search-container { position: relative; width: 100%; margin: 10px 0 20px 0; z-index: 100; }
         .search-input { width: 100%; padding: 12px 15px; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 8px; color: #fff; font-size: 0.9rem; transition: 0.3s; outline: none; text-align: right; }
         .search-input:focus { border-color: #ff9800; box-shadow: 0 0 8px rgba(255, 152, 0, 0.2); }
+
+        /* قائمة نتائج البحث المنسدلة المباشرة */
+        .search-dropdown { display: none; position: absolute; top: calc(100% + 5px); left: 0; right: 0; background: #18181c; border: 1px solid #333; border-radius: 8px; max-height: 320px; overflow-y: auto; box-shadow: 0 8px 25px rgba(0,0,0,0.8); z-index: 999; }
+        .search-item { display: flex; align-items: center; gap: 12px; padding: 10px; border-bottom: 1px solid #222; transition: 0.2s; cursor: pointer; text-decoration: none; }
+        .search-item:last-child { border-bottom: none; }
+        .search-item:hover { background: #222228; }
+        .search-item-img { width: 45px; height: 60px; object-fit: cover; border-radius: 5px; border: 1px solid #333; flex-shrink: 0; }
+        .search-item-info { display: flex; flex-direction: column; align-items: flex-start; text-align: right; overflow: hidden; }
+        .search-item-title { font-size: 0.88rem; color: #fff; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
+        .search-item-badge { font-size: 0.72rem; color: #ff9800; background: rgba(255, 152, 0, 0.12); padding: 2px 6px; border-radius: 4px; margin-top: 4px; font-weight: bold; }
+
+        .search-empty-msg { padding: 18px; text-align: center; color: #ff9800; font-size: 0.88rem; font-weight: bold; }
+        .search-prompt-msg { padding: 18px; text-align: center; color: #888; font-size: 0.85rem; }
 
         /* الإعلانات العلوية والسفلية وشريط التنبيه */
         .ad-container { margin: 10px auto; text-align: center; width: 100%; overflow: hidden; }
@@ -77,7 +90,6 @@
         footer a { color: #ff9800; font-weight: bold; }
 
         .loading-text { color: #ff9800; font-size: 0.95rem; grid-column: 1 / -1; margin: 30px 0; text-align: center; }
-        .coming-soon-msg { color: #ff9800; font-size: 1rem; font-weight: bold; grid-column: 1 / -1; padding: 30px 10px; text-align: center; background: #1a1a1a; border: 1px dashed #ff9800; border-radius: 8px; margin: 10px 0; }
     </style>
 </head>
 <body>
@@ -88,9 +100,10 @@
             <p>شاهد أحدث الأنميات والحلقات المترجمة بدقة عالية</p>
         </header>
 
-        <!-- شريط البحث فوق السلايدر -->
+        <!-- شريط البحث ومُنسدل النتائج المباشر -->
         <div class="search-container">
-            <input type="text" id="searchInput" class="search-input" placeholder="بحث..." oninput="handleSmartSearch()">
+            <input type="text" id="searchInput" class="search-input" placeholder="بحث..." oninput="handleLiveSearch()" onfocus="handleLiveSearch()">
+            <div id="searchDropdown" class="search-dropdown"></div>
         </div>
 
         <!-- الشريط الإعلاني العلوي -->
@@ -117,7 +130,7 @@
             <p class="loading-text">جاري تحميل قائمة الأنميات...</p>
         </div>
 
-        <!-- شريط التنبيه الإعلاني الرمادي البسيط قبل الإعلانات السفلية -->
+        <!-- شريط التنبيه الإعلاني الرمادي البسيط -->
         <div class="ad-label">----------اعلان----------</div>
 
         <!-- الشريط الإعلاني السفلي الإضافي -->
@@ -188,12 +201,16 @@
                       .replace(/[\-:_,\s]/g, "");
         }
 
-        function handleSmartSearch() {
-            const rawQuery = document.getElementById('searchInput').value.trim();
+        // دالة البحث المباشر المنبثق تحت الشريط
+        function handleLiveSearch() {
+            const searchInput = document.getElementById('searchInput');
+            const dropdown = document.getElementById('searchDropdown');
+            const rawQuery = searchInput.value.trim();
             const query = normalizeText(rawQuery);
 
-            if (!query) {
-                renderAnimeGrid(allAnimesList);
+            if (rawQuery === "") {
+                dropdown.innerHTML = '<div class="search-prompt-msg">ما الذي ترغب بالبحث عنه؟</div>';
+                dropdown.style.display = 'block';
                 return;
             }
 
@@ -203,8 +220,41 @@
                 return normTitle.includes(query) || normId.includes(query);
             });
 
-            renderAnimeGrid(filtered, true);
+            dropdown.innerHTML = '';
+
+            if (filtered.length === 0) {
+                dropdown.innerHTML = '<div class="search-empty-msg">سيضاف في الوقت القريب 🚀</div>';
+            } else {
+                filtered.forEach(anime => {
+                    const lastEp = (anime.episodes && anime.episodes.length > 0) 
+                        ? anime.episodes[anime.episodes.length - 1].ep 
+                        : 1;
+
+                    const item = document.createElement('a');
+                    item.href = `episodes.html?id=${anime.id}`;
+                    item.className = 'search-item';
+                    item.innerHTML = `
+                        <img src="${anime.poster}" class="search-item-img" alt="${anime.title}">
+                        <div class="search-item-info">
+                            <div class="search-item-title">${anime.title}</div>
+                            <span class="search-item-badge">آخر حلقة: ${lastEp}</span>
+                        </div>
+                    `;
+                    dropdown.appendChild(item);
+                });
+            }
+
+            dropdown.style.display = 'block';
         }
+
+        // إغلاق القائمة المنسدلة عند النقرة خارجها
+        document.addEventListener('click', function(e) {
+            const container = document.querySelector('.search-container');
+            const dropdown = document.getElementById('searchDropdown');
+            if (container && !container.contains(e.target)) {
+                dropdown.style.display = 'none';
+            }
+        });
 
         function setupSlider(animes, sliderIds) {
             const sliderWrapper = document.getElementById('sliderWrapper');
@@ -371,16 +421,12 @@
             }
         }
 
-        function renderAnimeGrid(animes, isSearching = false) {
+        function renderAnimeGrid(animes) {
             const animeGrid = document.getElementById('animeGrid');
             animeGrid.innerHTML = '';
 
             if (animes.length === 0) {
-                if (isSearching) {
-                    animeGrid.innerHTML = '<div class="coming-soon-msg">سيضاف في الوقت القريب 🚀</div>';
-                } else {
-                    animeGrid.innerHTML = '<p class="loading-text">لا توجد أنميات مضافة حالياً</p>';
-                }
+                animeGrid.innerHTML = '<p class="loading-text">لا توجد أنميات مضافة حالياً</p>';
                 return;
             }
 
