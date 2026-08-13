@@ -154,6 +154,8 @@
                 if (rec && rec.encryptedData) {
                     const decrypted = decryptData(rec.encryptedData);
                     allAnimes = decrypted ? (decrypted.animes || []) : [];
+                } else if (rec && rec.animes) {
+                    allAnimes = rec.animes;
                 } else {
                     allAnimes = [];
                 }
@@ -220,7 +222,7 @@
             }
 
             saveToWorker(allAnimes, () => {
-                status.innerText = "✅ تم حفظ وتشفير الأنمي بنجاح!";
+                status.innerText = "✅ تم حفظ وتشفير الأنما بنجاح!";
                 status.style.color = "#28a745";
                 fetchAnimes();
             });
@@ -283,10 +285,21 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ encryptedData: encrypted })
             })
-            .then(res => res.json())
+            .then(async res => {
+                if(!res.ok) {
+                    const errRes = await res.text();
+                    throw new Error(`كود الاستجابة: ${res.status}`);
+                }
+                return res.json();
+            })
             .then(() => onSuccess())
             .catch(err => {
-                alert("حدث خطأ أثناء الحفظ");
+                alert("تنبيه الحفظ: " + err.message);
+                const animeStatus = document.getElementById('animeStatus');
+                if(animeStatus) {
+                    animeStatus.innerText = "❌ حدث خطأ أثناء الحفظ";
+                    animeStatus.style.color = "#ff5252";
+                }
             });
         }
     </script>
