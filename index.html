@@ -165,7 +165,6 @@
             document.getElementById('animeGrid').innerHTML = '<p style="color:red; grid-column:1/-1; text-align:center;">حدث خطأ أثناء جلب الأنميات</p>';
         });
 
-        // دالة إعداد السلايدر والتنقل التلقائي/اليدوي
         function setupSlider(animes, sliderIds) {
             const sliderWrapper = document.getElementById('sliderWrapper');
             const sliderContainer = document.getElementById('sliderContainer');
@@ -213,10 +212,7 @@
 
             sliderWrapper.style.display = 'block';
 
-            // تفعيل التمرير والسحب باليد للموبايل والماوس
             enableTouchAndDrag(sliderWrapper);
-
-            // تشغيل التبديل التلقائي
             startAutoSlide();
         }
 
@@ -239,10 +235,10 @@
             if(resumeTimeout) clearTimeout(resumeTimeout);
             currentSlide = index;
             updateSliderPosition();
-            // إعادة التبديل التلقائي بعد 6 ثوانٍ من التوقف اليدوي
+            // تم تقليل وقت العودة للتبديل التلقائي إلى 2.5 ثانية (2500 ميلي ثانية)
             resumeTimeout = setTimeout(() => {
                 startAutoSlide();
-            }, 6000);
+            }, 2500);
         }
 
         function updateSliderPosition() {
@@ -256,7 +252,6 @@
             });
         }
 
-        // البرمجة الخاصة بالسحب باليد (Touch Swipe) والماوس
         function enableTouchAndDrag(wrapper) {
             let startX = 0;
             let currentX = 0;
@@ -278,11 +273,10 @@
                 isDragging = false;
                 const diffX = startX - currentX;
 
-                // إذا جرى السحب لمسافة كافية (أكثر من 40px)
                 if(Math.abs(diffX) > 40) {
-                    if(diffX < 0) { // سحب لليمين -> الشريحة التالية (في اتجاه RTL)
+                    if(diffX < 0) { 
                         currentSlide = (currentSlide + 1) % totalSlides;
-                    } else { // سحب لليسار -> الشريحة السابقة
+                    } else { 
                         currentSlide = (currentSlide - 1 + totalSlides) % totalSlides;
                     }
                 }
@@ -300,7 +294,6 @@
             wrapper.addEventListener('mouseleave', handleEnd);
         }
 
-        // دالة آخر المشاهدات
         function setupContinueWatching(animes) {
             const continueSection = document.getElementById('continueSection');
             const continueGrid = document.getElementById('continueGrid');
@@ -338,7 +331,6 @@
             }
         }
 
-        // دالة شبكة الأنميات
         function renderAnimeGrid(animes) {
             const animeGrid = document.getElementById('animeGrid');
             animeGrid.innerHTML = '';
