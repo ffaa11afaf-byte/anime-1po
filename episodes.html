@@ -63,7 +63,8 @@
 
     <div class="player-box">
         <div class="player-container">
-            <iframe id="videoPlayer" src="" allowfullscreen scrolling="no"></iframe>
+            <!-- تمت إضافة خاصية sandbox لمنع الإعلانات المنبثقة والنوافذ الخارجية -->
+            <iframe id="videoPlayer" src="" allowfullscreen scrolling="no" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
         </div>
     </div>
     
@@ -88,7 +89,7 @@
 
     <script>
         const API_URL = "https://anime-api-proxy.ffaa11afaf.workers.dev";
-        const SECRET_PASS = "18001900m"; // مفتاح فك التشفير
+        const SECRET_PASS = "18001900m";
         const listContainer = document.getElementById('episodesList');
         const iframe = document.getElementById('videoPlayer');
         const downloadBtn = document.getElementById('dynamicDownloadBtn');
@@ -109,7 +110,27 @@
             }
         }
 
-        function loadVideo(url, element) {
+        // حفظ سجل المشاهدة في ذاكرة المتصفح
+        function saveToWatchHistory(animeId, epNum) {
+            try {
+                let history = JSON.parse(localStorage.getItem('animeHistory') || '[]');
+                history = history.filter(item => item.animeId !== animeId);
+                
+                history.unshift({
+                    animeId: animeId,
+                    epNum: epNum,
+                    progress: 100,
+                    timestamp: Date.now()
+                });
+
+                if(history.length > 5) history = history.slice(0, 5);
+                localStorage.setItem('animeHistory', JSON.stringify(history));
+            } catch(e) {
+                console.error("خطأ حفظ السجل:", e);
+            }
+        }
+
+        function loadVideo(url, element, epNum) {
             iframe.src = url;
             const encoded = btoa(url);
             downloadBtn.href = `download.html?link=${encoded}`;
@@ -118,14 +139,16 @@
 
             document.querySelectorAll('.quality-btn').forEach(btn => btn.classList.remove('active'));
             element.classList.add('active');
+
+            if(epNum) saveToWatchHistory(currentAnimeId, epNum);
         }
 
         fetch(API_URL)
         .then(response => response.json())
         .then(data => {
             let animes = [];
-
             let rec = data.record ? data.record : data;
+
             if (rec && rec.encryptedData) {
                 const decrypted = decryptData(rec.encryptedData);
                 animes = decrypted ? (decrypted.animes || []) : [];
@@ -165,7 +188,7 @@
                             const qualityBtn = document.createElement('a');
                             qualityBtn.className = 'quality-btn';
                             qualityBtn.innerText = server.quality;
-                            qualityBtn.onclick = () => loadVideo(server.embedUrl, qualityBtn);
+                            qualityBtn.onclick = () => loadVideo(server.embedUrl, qualityBtn, episode.ep);
                             linksContainer.appendChild(qualityBtn);
                         }
                     });
@@ -174,12 +197,12 @@
                     listContainer.appendChild(epSection);
                 });
 
-                // تشغيل الحلقة الأولى تلقائياً
+                // تعديل: تشغيل آخر حلقة مضافة تلقائياً بدلاً من الأولى
                 setTimeout(() => {
                     const allSections = document.querySelectorAll('.ep-section');
                     if (allSections.length > 0) {
-                        const firstSection = allSections[0];
-                        const firstBtn = firstSection.querySelector('.quality-btn');
+                        const lastSection = allSections[allSections.length - 1]; // اختار آخر حلقة
+                        const firstBtn = lastSection.querySelector('.quality-btn');
                         if (firstBtn) firstBtn.click();
                     }
                 }, 300);
