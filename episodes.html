@@ -63,8 +63,8 @@
 
     <div class="player-box">
         <div class="player-container">
-            <!-- تمت إضافة خاصية sandbox لمنع الإعلانات المنبثقة والنوافذ الخارجية -->
-            <iframe id="videoPlayer" src="" allowfullscreen scrolling="no" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
+            <!-- تم إرجاع الـ iframe عادي وبدون قيود sandbox -->
+            <iframe id="videoPlayer" src="" allowfullscreen scrolling="no"></iframe>
         </div>
     </div>
     
@@ -110,7 +110,6 @@
             }
         }
 
-        // حفظ سجل المشاهدة في ذاكرة المتصفح
         function saveToWatchHistory(animeId, epNum) {
             try {
                 let history = JSON.parse(localStorage.getItem('animeHistory') || '[]');
@@ -197,15 +196,7 @@
                     listContainer.appendChild(epSection);
                 });
 
-                // تعديل: تشغيل آخر حلقة مضافة تلقائياً بدلاً من الأولى
-                setTimeout(() => {
-                    const allSections = document.querySelectorAll('.ep-section');
-                    if (allSections.length > 0) {
-                        const lastSection = allSections[allSections.length - 1]; // اختار آخر حلقة
-                        const firstBtn = lastSection.querySelector('.quality-btn');
-                        if (firstBtn) firstBtn.click();
-                    }
-                }, 300);
+                // تم إلغاء كود التشغيل التلقائي بالكامل؛ المشاهد يختار بنفسه
             }
 
             startAnimeCountdown(anime.airDay, anime.airTime, anime.lastReset);
