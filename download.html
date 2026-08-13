@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تجهيز رابط التحميل...</title>
+    <style>
+        * { box-sizing: border-box; font-family: sans-serif; }
+        body { background: #121212; color: white; margin: 0; padding: 20px; text-align: center; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        .box { background: #1a1a1a; padding: 30px; border-radius: 15px; border: 1px solid #333; width: 100%; max-width: 500px; }
+        h1 { color: #ff9800; font-size: 1.5rem; margin-bottom: 20px; }
+        #timer { font-size: 1.2rem; color: #fff; margin-bottom: 20px; }
+        #downloadBtn { display: none; background: #28a745; color: white; padding: 15px 40px; border-radius: 30px; font-weight: bold; font-size: 1.1rem; text-decoration: none; transition: 0.3s; }
+        #downloadBtn:hover { background: #218838; }
+        .ad-container { margin: 20px 0; min-height: 100px; }
+    </style>
+</head>
+<body>
+
+    <div class="box">
+        <h1>الرجاء الانتظار قليلاً...</h1>
+        <p id="timer">سيكون رابط التحميل جاهزاً بعد <span id="count">10</span> ثوانٍ</p>
+
+        <!-- مكان إعلان Adsterra -->
+        <div class="ad-container">
+             <!-- ضع كود إعلان Adsterra الخاص بك هنا (Banner Ad) -->
+             <script type="text/javascript">
+                // ضع كود إعلانك هنا
+             </script>
+        </div>
+
+        <a id="downloadBtn" href="#">اضغط هنا للتحميل المباشر</a>
+    </div>
+
+    <script>
+        // فك تشفير الرابط
+        const params = new URLSearchParams(window.location.search);
+        const encodedLink = params.get('link');
+        
+        if (encodedLink) {
+            try {
+                const decodedLink = atob(encodedLink);
+                let count = 10; // عدد الثواني
+                const countDisplay = document.getElementById('count');
+                const btn = document.getElementById('downloadBtn');
+                const timerText = document.getElementById('timer');
+
+                const interval = setInterval(() => {
+                    count--;
+                    countDisplay.innerText = count;
+                    if(count <= 0) {
+                        clearInterval(interval);
+                        timerText.style.display = 'none';
+                        btn.style.display = 'inline-block';
+                        btn.href = decodedLink;
+                    }
+                }, 1000);
+            } catch (e) {
+                document.body.innerHTML = "<h1>خطأ في الرابط</h1>";
+            }
+        } else {
+            document.body.innerHTML = "<h1>رابط غير موجود</h1>";
+        }
+    </script>
+    
+    <!-- إعلانات Adsterra Popunder (إذا أردت) -->
+    <script type="text/javascript">
+        // ضع كود Popunder هنا إذا كنت تستخدمه
+    </script>
+
+</body>
+</html>
