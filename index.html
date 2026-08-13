@@ -13,7 +13,7 @@
     
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>أنميات صيف 2026 - الرئيسية</title>
+    <title>Stream season - الرئيسية</title>
     
     <!-- مكتبة فك التشفير -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
@@ -22,19 +22,23 @@
         * { box-sizing: border-box; font-family: sans-serif; text-decoration: none; }
         body { background: #0f0f12; color: white; margin: 0; padding: 15px 10px; text-align: center; display: flex; flex-direction: column; min-height: 100vh; justify-content: space-between; }
         
-        header { margin-bottom: 20px; }
-        header h1 { font-size: 1.5rem; color: #ff9800; margin: 0 0 5px 0; }
+        header { margin-bottom: 15px; }
+        header h1 { font-size: 1.8rem; color: #ff9800; margin: 0 0 5px 0; font-weight: bold; }
         header p { color: #aaa; font-size: 0.85rem; margin: 0; }
 
         .container { max-width: 1000px; margin: 0 auto; width: 100%; text-align: right; }
         .section-title { font-size: 1.1rem; color: #fff; margin: 20px 0 10px 0; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
 
-        /* 1. السلايدر العلوي */
-        .slider-wrapper { position: relative; width: 100%; overflow: hidden; border-radius: 12px; margin-bottom: 25px; background: #1a1a1a; border: 1px solid #2a2a2a; }
-        .slider-container { display: flex; transition: transform 0.4s ease-in-out; width: 100%; }
+        /* الإعلانات العلوية والسفلية */
+        .ad-container { margin: 10px auto; text-align: center; width: 100%; overflow: hidden; }
+
+        /* 1. السلايدر العلوي الذكي */
+        .slider-wrapper { position: relative; width: 100%; overflow: hidden; border-radius: 12px; margin-bottom: 25px; background: #1a1a1a; border: 1px solid #2a2a2a; touch-action: pan-y; user-select: none; }
+        .slider-container { display: flex; transition: transform 0.4s ease-out; width: 100%; cursor: grab; }
+        .slider-container:active { cursor: grabbing; }
         .slide-card { min-width: 100%; position: relative; height: 210px; display: block; overflow: hidden; }
-        .slide-img { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.75); }
-        .slide-overlay { position: absolute; bottom: 0; left: 0; right: 0; padding: 15px; background: linear-gradient(transparent, rgba(0,0,0,0.9)); display: flex; flex-direction: column; align-items: flex-start; }
+        .slide-img { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.75); pointer-events: none; }
+        .slide-overlay { position: absolute; bottom: 0; left: 0; right: 0; padding: 15px; background: linear-gradient(transparent, rgba(0,0,0,0.9)); display: flex; flex-direction: column; align-items: flex-start; pointer-events: none; }
         .slide-title { font-size: 1.2rem; font-weight: bold; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.8); margin-bottom: 4px; }
         .slide-badge { background: rgba(255, 152, 0, 0.2); color: #ff9800; border: 1px solid #ff9800; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; }
         
@@ -73,9 +77,14 @@
 
     <div class="container">
         <header>
-            <h1>تصفح الأنمي</h1>
+            <h1>Stream season</h1>
             <p>شاهد أحدث الأنميات والحلقات المترجمة بدقة عالية</p>
         </header>
+
+        <!-- الشريط الإعلاني العلوي -->
+        <div class="ad-container">
+            <script src="https://pl30586730.effectivecpmnetwork.com/28/04/97/280497d1bc86158457d9ebfaec469991.js"></script>
+        </div>
 
         <!-- 1. السلايدر العلوي -->
         <div class="slider-wrapper" id="sliderWrapper" style="display: none;">
@@ -96,6 +105,13 @@
         </div>
     </div>
 
+    <!-- الشريط الإعلاني السفلي الإضافي -->
+    <div class="ad-container">
+        <script async="async" data-cfasync="false" src="https://unprofessionalginger.com/c677bf44c6f94d1865a3c4c2a11f6675/invoke.js"></script>
+        <div id="container-c677bf44c6f94d1865a3c4c2a11f6675"></div>
+        <script src="https://pl30586282.effectivecpmnetwork.com/91/de/a9/91dea99a2c0107ea84bef42b886dbbae.js"></script>
+    </div>
+
     <footer>
         جميع الحقوق محفوظة © | <a href="https://t.me/anime_111PO" target="_blank">قناة التليكرام</a>
     </footer>
@@ -106,6 +122,8 @@
         
         let currentSlide = 0;
         let slideInterval;
+        let resumeTimeout;
+        let totalSlides = 0;
 
         function decryptData(encryptedStr) {
             try {
@@ -138,13 +156,8 @@
                 sliderIds = rec.sliderAnimes || [];
             }
 
-            // 1. بناء السلايدر
             setupSlider(animes, sliderIds);
-
-            // 2. بناء آخر المشاهدات من LocalStorage
             setupContinueWatching(animes);
-
-            // 3. بناء شبكة الأنميات الأساسية
             renderAnimeGrid(animes);
         })
         .catch(err => {
@@ -152,7 +165,7 @@
             document.getElementById('animeGrid').innerHTML = '<p style="color:red; grid-column:1/-1; text-align:center;">حدث خطأ أثناء جلب الأنميات</p>';
         });
 
-        // دالة السلايدر
+        // دالة إعداد السلايدر والتنقل التلقائي/اليدوي
         function setupSlider(animes, sliderIds) {
             const sliderWrapper = document.getElementById('sliderWrapper');
             const sliderContainer = document.getElementById('sliderContainer');
@@ -160,7 +173,6 @@
 
             if(!sliderIds || sliderIds.length === 0) return;
 
-            // استخراج الأنميات المحددة للسلايدر
             let featuredAnimes = [];
             sliderIds.forEach(id => {
                 const found = animes.find(a => a.id === id);
@@ -169,6 +181,7 @@
 
             if(featuredAnimes.length === 0) return;
 
+            totalSlides = featuredAnimes.length;
             sliderContainer.innerHTML = '';
             sliderDots.innerHTML = '';
 
@@ -191,31 +204,100 @@
 
                 const dot = document.createElement('div');
                 dot.className = `dot ${index === 0 ? 'active' : ''}`;
-                dot.onclick = () => goToSlide(index, featuredAnimes.length);
+                dot.onclick = (e) => {
+                    e.preventDefault();
+                    pauseAndGoToSlide(index);
+                };
                 sliderDots.appendChild(dot);
             });
 
             sliderWrapper.style.display = 'block';
 
-            // التبديل التلقائي كل 4 ثوانٍ
-            if(featuredAnimes.length > 1) {
+            // تفعيل التمرير والسحب باليد للموبايل والماوس
+            enableTouchAndDrag(sliderWrapper);
+
+            // تشغيل التبديل التلقائي
+            startAutoSlide();
+        }
+
+        function startAutoSlide() {
+            stopAutoSlide();
+            if(totalSlides > 1) {
                 slideInterval = setInterval(() => {
-                    currentSlide = (currentSlide + 1) % featuredAnimes.length;
-                    goToSlide(currentSlide, featuredAnimes.length);
+                    currentSlide = (currentSlide + 1) % totalSlides;
+                    updateSliderPosition();
                 }, 4000);
             }
         }
 
-        function goToSlide(index, total) {
+        function stopAutoSlide() {
+            if(slideInterval) clearInterval(slideInterval);
+        }
+
+        function pauseAndGoToSlide(index) {
+            stopAutoSlide();
+            if(resumeTimeout) clearTimeout(resumeTimeout);
             currentSlide = index;
+            updateSliderPosition();
+            // إعادة التبديل التلقائي بعد 6 ثوانٍ من التوقف اليدوي
+            resumeTimeout = setTimeout(() => {
+                startAutoSlide();
+            }, 6000);
+        }
+
+        function updateSliderPosition() {
             const container = document.getElementById('sliderContainer');
-            container.style.transform = `translateX(${index * 100}%)`;
+            container.style.transform = `translateX(${currentSlide * 100}%)`;
             
             const dots = document.querySelectorAll('.dot');
             dots.forEach((d, i) => {
-                if(i === index) d.classList.add('active');
+                if(i === currentSlide) d.classList.add('active');
                 else d.classList.remove('active');
             });
+        }
+
+        // البرمجة الخاصة بالسحب باليد (Touch Swipe) والماوس
+        function enableTouchAndDrag(wrapper) {
+            let startX = 0;
+            let currentX = 0;
+            let isDragging = false;
+
+            const handleStart = (e) => {
+                isDragging = true;
+                startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+                stopAutoSlide();
+            };
+
+            const handleMove = (e) => {
+                if(!isDragging) return;
+                currentX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+            };
+
+            const handleEnd = () => {
+                if(!isDragging) return;
+                isDragging = false;
+                const diffX = startX - currentX;
+
+                // إذا جرى السحب لمسافة كافية (أكثر من 40px)
+                if(Math.abs(diffX) > 40) {
+                    if(diffX < 0) { // سحب لليمين -> الشريحة التالية (في اتجاه RTL)
+                        currentSlide = (currentSlide + 1) % totalSlides;
+                    } else { // سحب لليسار -> الشريحة السابقة
+                        currentSlide = (currentSlide - 1 + totalSlides) % totalSlides;
+                    }
+                }
+                
+                pauseAndGoToSlide(currentSlide);
+            };
+
+            wrapper.addEventListener('touchstart', handleStart, {passive: true});
+            wrapper.addEventListener('touchmove', handleMove, {passive: true});
+            wrapper.addEventListener('touchend', handleEnd);
+
+            wrapper.addEventListener('mousedown', handleStart);
+            wrapper.addEventListener('mousemove', handleMove);
+            wrapper.addEventListener('mouseup', handleEnd);
+            wrapper.addEventListener('mouseleave', handleEnd);
         }
 
         // دالة آخر المشاهدات
@@ -286,14 +368,6 @@
             });
         }
     </script>
-    
-    <!-- Native Banner Ad -->
-    <script async="async" data-cfasync="false" src="https://unprofessionalginger.com/c677bf44c6f94d1865a3c4c2a11f6675/invoke.js"></script>
-    <div id="container-c677bf44c6f94d1865a3c4c2a11f6675"></div>
-    
-    <!-- إعلانات Adsterra -->
-    <script src="https://pl30586282.effectivecpmnetwork.com/91/de/a9/91dea99a2c0107ea84bef42b886dbbae.js"></script>
-    <script src="https://pl30586730.effectivecpmnetwork.com/28/04/97/280497d1bc86158457d9ebfaec469991.js"></script>
 
 </body>
 </html>
