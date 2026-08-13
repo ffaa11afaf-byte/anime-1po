@@ -20,35 +20,77 @@
 
     <style>
         * { box-sizing: border-box; font-family: sans-serif; text-decoration: none; }
-        body { background: #121212; color: white; margin: 0; padding: 20px 10px; text-align: center; display: flex; flex-direction: column; min-height: 100vh; justify-content: space-between; }
+        body { background: #0f0f12; color: white; margin: 0; padding: 15px 10px; text-align: center; display: flex; flex-direction: column; min-height: 100vh; justify-content: space-between; }
         
-        header { margin-bottom: 25px; }
-        header h1 { font-size: 1.6rem; color: #ff9800; margin: 0 0 5px 0; }
-        header p { color: #aaa; font-size: 0.9rem; margin: 0; }
+        header { margin-bottom: 20px; }
+        header h1 { font-size: 1.5rem; color: #ff9800; margin: 0 0 5px 0; }
+        header p { color: #aaa; font-size: 0.85rem; margin: 0; }
 
-        .anime-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; max-width: 1000px; margin: 0 auto; width: 100%; }
+        .container { max-width: 1000px; margin: 0 auto; width: 100%; text-align: right; }
+        .section-title { font-size: 1.1rem; color: #fff; margin: 20px 0 10px 0; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
+
+        /* 1. السلايدر العلوي */
+        .slider-wrapper { position: relative; width: 100%; overflow: hidden; border-radius: 12px; margin-bottom: 25px; background: #1a1a1a; border: 1px solid #2a2a2a; }
+        .slider-container { display: flex; transition: transform 0.4s ease-in-out; width: 100%; }
+        .slide-card { min-width: 100%; position: relative; height: 210px; display: block; overflow: hidden; }
+        .slide-img { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.75); }
+        .slide-overlay { position: absolute; bottom: 0; left: 0; right: 0; padding: 15px; background: linear-gradient(transparent, rgba(0,0,0,0.9)); display: flex; flex-direction: column; align-items: flex-start; }
+        .slide-title { font-size: 1.2rem; font-weight: bold; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.8); margin-bottom: 4px; }
+        .slide-badge { background: rgba(255, 152, 0, 0.2); color: #ff9800; border: 1px solid #ff9800; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; }
         
-        .anime-card { background: #1a1a1a; border: 1px solid #333; border-radius: 10px; padding: 10px; display: flex; flex-direction: column; align-items: center; transition: 0.3s; cursor: pointer; text-decoration: none; }
-        .anime-card:hover { border-color: #ff9800; transform: translateY(-5px); box-shadow: 0 4px 15px rgba(255, 152, 0, 0.2); }
-        .anime-poster { width: 100%; height: 210px; border-radius: 8px; object-fit: cover; border: 1px solid #444; margin-bottom: 10px; }
-        .anime-title { font-size: 0.95rem; color: #fff; height: 38px; display: flex; align-items: center; justify-content: center; text-align: center; line-height: 1.2; font-weight: bold; }
-        .anime-card:hover .anime-title { color: #ff9800; }
+        .slider-dots { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; z-index: 10; }
+        .dot { width: 8px; height: 8px; background: rgba(255,255,255,0.4); border-radius: 50%; transition: 0.3s; cursor: pointer; }
+        .dot.active { background: #ff9800; width: 20px; border-radius: 10px; }
 
-        footer { margin-top: 30px; font-size: 0.85rem; color: #888; padding: 10px 0; }
+        /* 2. شريط آخر المشاهدات */
+        .continue-section { display: none; margin-bottom: 25px; }
+        .continue-grid { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 8px; scrollbar-width: none; }
+        .continue-card { min-width: 160px; max-width: 160px; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 8px; overflow: hidden; position: relative; flex-shrink: 0; }
+        .continue-img { width: 100%; height: 90px; object-fit: cover; }
+        .continue-info { padding: 8px; text-align: right; }
+        .continue-ep { font-size: 0.8rem; color: #ff9800; font-weight: bold; }
+        .continue-name { font-size: 0.75rem; color: #ccc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+        .progress-bar-bg { width: 100%; height: 3px; background: #333; margin-top: 6px; border-radius: 2px; }
+        .progress-bar-fill { height: 100%; background: #ff9800; border-radius: 2px; }
+
+        /* 3. شبكة الأنميات الأساسية */
+        .anime-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); gap: 12px; width: 100%; }
+        .anime-card { background: #1a1a1a; border: 1px solid #252525; border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; transition: 0.3s; cursor: pointer; text-decoration: none; position: relative; }
+        .anime-card:hover { border-color: #ff9800; transform: translateY(-3px); }
+        .poster-box { position: relative; width: 100%; height: 190px; }
+        .anime-poster { width: 100%; height: 100%; object-fit: cover; }
+        .status-tag { position: absolute; top: 6px; right: 6px; background: #28a745; color: #fff; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
+        .ep-tag { position: absolute; bottom: 6px; right: 6px; background: rgba(0,0,0,0.75); color: #fff; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; border: 1px solid #444; }
+        .anime-title { font-size: 0.85rem; color: #fff; padding: 8px 5px; text-align: center; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        footer { margin-top: 30px; font-size: 0.85rem; color: #888; padding: 10px 0; text-align: center; }
         footer a { color: #ff9800; font-weight: bold; }
-        footer a:hover { text-decoration: underline; }
 
-        .loading-text { color: #ff9800; font-size: 1rem; grid-column: 1 / -1; margin: 30px 0; }
+        .loading-text { color: #ff9800; font-size: 0.95rem; grid-column: 1 / -1; margin: 30px 0; text-align: center; }
     </style>
 </head>
 <body>
 
-    <div>
+    <div class="container">
         <header>
-            <h1> الصفحة الرئيسية </h1>
-            <p>اختر الأنمي لمشاهدة الحلقات المترجمة بدقة عالية</p>
+            <h1>تصفح الأنمي</h1>
+            <p>شاهد أحدث الأنميات والحلقات المترجمة بدقة عالية</p>
         </header>
 
+        <!-- 1. السلايدر العلوي -->
+        <div class="slider-wrapper" id="sliderWrapper" style="display: none;">
+            <div class="slider-container" id="sliderContainer"></div>
+            <div class="slider-dots" id="sliderDots"></div>
+        </div>
+
+        <!-- 2. قسم آخر المشاهدات -->
+        <div class="continue-section" id="continueSection">
+            <div class="section-title">آخر المشاهدات</div>
+            <div class="continue-grid" id="continueGrid"></div>
+        </div>
+
+        <!-- 3. الإصدارات الحديثة -->
+        <div class="section-title">الإصدارات الحديثة</div>
         <div class="anime-grid" id="animeGrid">
             <p class="loading-text">جاري تحميل قائمة الأنميات...</p>
         </div>
@@ -57,14 +99,13 @@
     <footer>
         جميع الحقوق محفوظة © | <a href="https://t.me/anime_111PO" target="_blank">قناة التليكرام</a>
     </footer>
-    <footer>
-        ------------اعلان-------------
-    </footer>
 
     <script>
         const API_URL = "https://anime-api-proxy.ffaa11afaf.workers.dev";
         const SECRET_PASS = "18001900m";
-        const animeGrid = document.getElementById('animeGrid');
+        
+        let currentSlide = 0;
+        let slideInterval;
 
         function decryptData(encryptedStr) {
             try {
@@ -83,16 +124,141 @@
         .then(res => res.json())
         .then(data => {
             let animes = [];
+            let sliderIds = [];
             let rec = data.record ? data.record : data;
 
             if (rec && rec.encryptedData) {
                 const decrypted = decryptData(rec.encryptedData);
-                animes = decrypted ? (decrypted.animes || []) : [];
-            } 
-            else if (rec && rec.animes) {
+                if(decrypted) {
+                    animes = decrypted.animes || [];
+                    sliderIds = decrypted.sliderAnimes || [];
+                }
+            } else if (rec && rec.animes) {
                 animes = rec.animes;
+                sliderIds = rec.sliderAnimes || [];
             }
 
+            // 1. بناء السلايدر
+            setupSlider(animes, sliderIds);
+
+            // 2. بناء آخر المشاهدات من LocalStorage
+            setupContinueWatching(animes);
+
+            // 3. بناء شبكة الأنميات الأساسية
+            renderAnimeGrid(animes);
+        })
+        .catch(err => {
+            console.error(err);
+            document.getElementById('animeGrid').innerHTML = '<p style="color:red; grid-column:1/-1; text-align:center;">حدث خطأ أثناء جلب الأنميات</p>';
+        });
+
+        // دالة السلايدر
+        function setupSlider(animes, sliderIds) {
+            const sliderWrapper = document.getElementById('sliderWrapper');
+            const sliderContainer = document.getElementById('sliderContainer');
+            const sliderDots = document.getElementById('sliderDots');
+
+            if(!sliderIds || sliderIds.length === 0) return;
+
+            // استخراج الأنميات المحددة للسلايدر
+            let featuredAnimes = [];
+            sliderIds.forEach(id => {
+                const found = animes.find(a => a.id === id);
+                if(found) featuredAnimes.push(found);
+            });
+
+            if(featuredAnimes.length === 0) return;
+
+            sliderContainer.innerHTML = '';
+            sliderDots.innerHTML = '';
+
+            featuredAnimes.forEach((anime, index) => {
+                const lastEp = (anime.episodes && anime.episodes.length > 0) 
+                    ? anime.episodes[anime.episodes.length - 1].ep 
+                    : 1;
+
+                const slide = document.createElement('a');
+                slide.href = `episodes.html?id=${anime.id}`;
+                slide.className = 'slide-card';
+                slide.innerHTML = `
+                    <img src="${anime.poster}" class="slide-img" alt="${anime.title}">
+                    <div class="slide-overlay">
+                        <div class="slide-title">${anime.title}</div>
+                        <div class="slide-badge">الحلقة ${lastEp}</div>
+                    </div>
+                `;
+                sliderContainer.appendChild(slide);
+
+                const dot = document.createElement('div');
+                dot.className = `dot ${index === 0 ? 'active' : ''}`;
+                dot.onclick = () => goToSlide(index, featuredAnimes.length);
+                sliderDots.appendChild(dot);
+            });
+
+            sliderWrapper.style.display = 'block';
+
+            // التبديل التلقائي كل 4 ثوانٍ
+            if(featuredAnimes.length > 1) {
+                slideInterval = setInterval(() => {
+                    currentSlide = (currentSlide + 1) % featuredAnimes.length;
+                    goToSlide(currentSlide, featuredAnimes.length);
+                }, 4000);
+            }
+        }
+
+        function goToSlide(index, total) {
+            currentSlide = index;
+            const container = document.getElementById('sliderContainer');
+            container.style.transform = `translateX(${index * 100}%)`;
+            
+            const dots = document.querySelectorAll('.dot');
+            dots.forEach((d, i) => {
+                if(i === index) d.classList.add('active');
+                else d.classList.remove('active');
+            });
+        }
+
+        // دالة آخر المشاهدات
+        function setupContinueWatching(animes) {
+            const continueSection = document.getElementById('continueSection');
+            const continueGrid = document.getElementById('continueGrid');
+            const history = JSON.parse(localStorage.getItem('animeHistory') || '[]');
+
+            if(history.length === 0) return;
+
+            continueGrid.innerHTML = '';
+            let count = 0;
+
+            history.forEach(item => {
+                const anime = animes.find(a => a.id === item.animeId);
+                if(anime && count < 5) {
+                    count++;
+                    const percent = item.progress || 0;
+                    const card = document.createElement('a');
+                    card.href = `episodes.html?id=${anime.id}`;
+                    card.className = 'continue-card';
+                    card.innerHTML = `
+                        <img src="${anime.poster}" class="continue-img" alt="${anime.title}">
+                        <div class="continue-info">
+                            <div class="continue-ep">الحلقة ${item.epNum}</div>
+                            <div class="continue-name">${anime.title}</div>
+                            <div class="progress-bar-bg">
+                                <div class="progress-bar-fill" style="width: ${percent}%;"></div>
+                            </div>
+                        </div>
+                    `;
+                    continueGrid.appendChild(card);
+                }
+            });
+
+            if(count > 0) {
+                continueSection.style.display = 'block';
+            }
+        }
+
+        // دالة شبكة الأنميات
+        function renderAnimeGrid(animes) {
+            const animeGrid = document.getElementById('animeGrid');
             animeGrid.innerHTML = '';
 
             if (animes.length === 0) {
@@ -101,20 +267,24 @@
             }
 
             animes.forEach(anime => {
+                const lastEp = (anime.episodes && anime.episodes.length > 0) 
+                    ? anime.episodes[anime.episodes.length - 1].ep 
+                    : 0;
+
                 const card = document.createElement('a');
                 card.href = `episodes.html?id=${anime.id}`;
                 card.className = 'anime-card';
                 card.innerHTML = `
-                    <img src="${anime.poster}" alt="${anime.title}" class="anime-poster">
+                    <div class="poster-box">
+                        <img src="${anime.poster}" alt="${anime.title}" class="anime-poster">
+                        <span class="status-tag">يعرض حالياً</span>
+                        <span class="ep-tag">الحلقة : ${lastEp}</span>
+                    </div>
                     <div class="anime-title">${anime.title}</div>
                 `;
                 animeGrid.appendChild(card);
             });
-        })
-        .catch(err => {
-            console.error(err);
-            animeGrid.innerHTML = '<p style="color:red; grid-column:1/-1;">حدث خطأ في جلب الأنميات</p>';
-        });
+        }
     </script>
     
     <!-- Native Banner Ad -->
