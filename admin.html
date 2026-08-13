@@ -3,12 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة تحكم إدارة الأنمي</title>
+    <title>System Error</title>
     <!-- مكتبة تليجرام للميني أب -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         * { box-sizing: border-box; font-family: sans-serif; }
         body { background: #121212; color: #fff; margin: 0; padding: 15px; direction: rtl; }
+        
+        /* تصميم صفحة الخطأ التمويهية */
+        #errorOverlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; color: #444; font-family: monospace; font-size: 1rem; padding: 15px; text-align: left; direction: ltr; z-index: 999999; }
+        
         .container { max-width: 600px; margin: 0 auto; }
         h1, h2 { color: #ff9800; text-align: center; margin-bottom: 15px; font-size: 1.3rem; }
         
@@ -27,18 +31,16 @@
         .anime-actions { display: flex; gap: 5px; }
         .sm-btn { padding: 5px 10px; font-size: 0.75rem; border-radius: 4px; border: none; cursor: pointer; }
         
-        #unauthorized { display: none; text-align: center; color: #ff5252; margin-top: 50px; }
         #app { display: none; }
         .status-msg { text-align: center; font-size: 0.85rem; margin-top: 8px; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div id="unauthorized">
-        <h2>⚠️ تنبيه أمان</h2>
-        <p>عذراً، هذه اللوحة مخصصة للأدمن فقط ولا يمكنك الوصول إليها.</p>
-    </div>
+    <!-- الواجهة التمويهية عند الدخول غير المصرح -->
+    <div id="errorOverlay">Error</div>
 
+    <!-- التطبيق الأساسي -->
     <div id="app" class="container">
         <h1>🛠️ لوحة تحكم الأنميات</h1>
 
@@ -87,8 +89,8 @@
             <label>رابط دقة 720p (اتركه فارغاً إن لم يتوفر):</label>
             <input type="text" id="link720" placeholder="https://stape.me/e/...">
 
-            <label>رابط دقة 480p (اتركه فارغاً إن لم يتوفر):</label>
-            <input type="text" id="link480" placeholder="https://stape.me/e/...">
+            <label>رابط دقة 360p (اتركه فارغاً إن لم يتوفر):</label>
+            <input type="text" id="link360" placeholder="https://stape.me/e/...">
 
             <button class="btn btn-green" onclick="addEpisode()">إضافة الحلقة</button>
             <div id="epStatus" class="status-msg"></div>
@@ -104,25 +106,25 @@
 
     <script>
         const API_URL = "https://anime-api-proxy.ffaa11afaf.workers.dev";
-        const ADMIN_ID = 8649503815; // الآيدي الخاص بك للحماية
+        const ADMIN_ID = 8649503815; // آيدي حسابك حصراً
         let allAnimes = [];
 
-        // تهيئة التليجرام ميني أب والتحقق من الأمان
+        // تهيئة التليجرام ميني أب والتحقق الصارم من الأمان
         const tg = window.Telegram.WebApp;
-        tg.expand(); // فتح الصفحة بكامل الشاشة
+        tg.expand();
 
         const user = tg.initDataUnsafe?.user;
 
-        // التحقق من الآيدي
+        // 🔒 القفل الأمني المحكم والتمويه:
         if (user && user.id === ADMIN_ID) {
             document.getElementById('app').style.display = 'block';
             fetchAnimes();
         } else {
-            // للتجربة أثناء التطوير إذا لم تكن فتحتها من تليجرام مباشرة
-            document.getElementById('app').style.display = 'block';
-            fetchAnimes();
-            // في الإنتاج النهائي يمكنك إزالة السطرين أعلاه وإبقاء السطر التالي فقط:
-            // document.getElementById('unauthorized').style.display = 'block';
+            // تدمير واجهة الأدمن وإظهار صفحة فارغة بكلمة Error فقط
+            const app = document.getElementById('app');
+            if(app) app.remove();
+            document.title = "Error";
+            document.getElementById('errorOverlay').style.display = 'block';
         }
 
         function fetchAnimes() {
@@ -178,7 +180,6 @@
             status.innerText = "⏳ جاري الحفظ...";
             status.style.color = "#ff9800";
 
-            // جلب البيانات والتحديث
             fetch(API_URL)
             .then(res => res.json())
             .then(data => {
@@ -193,7 +194,6 @@
                     animes.push({ id, title, poster, airDay, airTime, episodes: [] });
                 }
 
-                // حفظ في JSONBin عبر Worker
                 saveToWorker(animes, () => {
                     status.innerText = "✅ تم حفظ الأنمي بنجاح!";
                     status.style.color = "#28a745";
@@ -207,7 +207,7 @@
             const epNum = document.getElementById('epNum').value.trim();
             const l1080 = document.getElementById('link1080').value.trim();
             const l720 = document.getElementById('link720').value.trim();
-            const l480 = document.getElementById('link480').value.trim();
+            const l360 = document.getElementById('link360').value.trim();
             const status = document.getElementById('epStatus');
 
             if(!id || !epNum) {
@@ -235,12 +235,11 @@
                 let servers = [];
                 if(l1080) servers.push({ quality: "1080p", embedUrl: l1080 });
                 if(l720) servers.push({ quality: "720p", embedUrl: l720 });
-                if(l480) servers.push({ quality: "480p", embedUrl: l480 });
+                if(l360) servers.push({ quality: "360p", embedUrl: l360 });
 
-                // حذف الحلقة لو كانت مضافة سابقاً وإعادة إضافتها
                 anime.episodes = anime.episodes.filter(e => e.ep != epNum);
                 anime.episodes.push({ ep: parseInt(epNum), servers });
-                anime.lastReset = Date.now(); // إعادة تعيين العداد تلقائياً
+                anime.lastReset = Date.now();
 
                 saveToWorker(animes, () => {
                     status.innerText = "✅ تم إضافة الحلقة والترسيت بنجاح!";
@@ -264,7 +263,6 @@
         }
 
         function saveToWorker(animesData, onSuccess) {
-            // هنا نرسل الأمر للـ Worker بنفس طريقة البوت
             fetch(API_URL, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
