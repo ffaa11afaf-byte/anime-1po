@@ -82,7 +82,6 @@
     </footer>
 
     <script>
-        // اس
         const API_URL = "https://anime-api-proxy.ffaa11afaf.workers.dev";
         const listContainer = document.getElementById('episodesList');
         const iframe = document.getElementById('videoPlayer');
@@ -140,29 +139,30 @@
                     listContainer.appendChild(epSection);
                 });
 
-                // 🔥 تشغيل الحلقة الأخيرة تلقائياً عند فتح الصفحة
+                // تشغيل الحلقة الأخيرة تلقائياً عند فتح الصفحة
                 setTimeout(() => {
                     const allSections = document.querySelectorAll('.ep-section');
                     if (allSections.length > 0) {
-                        const lastSection = allSections[allSections.length - 1]; // آخر حلقة
-                        const firstBtn = lastSection.querySelector('.quality-btn'); // أول زر جودة
+                        const lastSection = allSections[allSections.length - 1];
+                        const firstBtn = lastSection.querySelector('.quality-btn');
                         if (firstBtn) {
-                            firstBtn.click(); // ضغطة وهمية لتشغيل الفيديو
+                            firstBtn.click();
                         }
                     }
                 }, 500);
             }
 
-            // تشغيل العداد الخاص بهذا الأنمي
+            // تشغيل العداد وتمرير lastReset للحساب الذكي
             const targetDay = anime.airDay !== undefined ? anime.airDay : 0; 
             const targetTime = anime.airTime || "20:00";
-            startAnimeCountdown(targetDay, targetTime);
+            startAnimeCountdown(targetDay, targetTime, anime.lastReset);
         })
         .catch(err => {
             listContainer.innerHTML = '<p style="color:red;">حدث خطأ أثناء تحميل البيانات</p>';
         });
 
-        function startAnimeCountdown(targetDay, targetTimeStr) {
+        // دالة العداد التنازلي الذكية
+        function startAnimeCountdown(targetDay, targetTimeStr, lastReset) {
             const [hours, minutes] = targetTimeStr.split(":").map(Number);
 
             function getNextTargetDate() {
@@ -171,7 +171,11 @@
                 target.setHours(hours, minutes, 0, 0);
 
                 let dayDifference = (targetDay - now.getDay() + 7) % 7;
-                if (dayDifference === 0 && now.getTime() >= target.getTime()) {
+                
+                // فحص إذا كان تم تصفير أو نشر حلقة اليوم مؤخراً
+                const resetRecently = lastReset && (now.getTime() - lastReset < 24 * 60 * 60 * 1000);
+
+                if ((dayDifference === 0 && now.getTime() >= target.getTime()) || (dayDifference === 0 && resetRecently)) {
                     dayDifference = 7;
                 }
                 target.setDate(now.getDate() + dayDifference);
