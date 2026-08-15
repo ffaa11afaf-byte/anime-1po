@@ -21,6 +21,7 @@
         .btn { display: block; width: 100%; background: #ff9800; color: #000; font-weight: bold; padding: 12px; border: none; border-radius: 8px; margin-top: 12px; cursor: pointer; font-size: 0.95rem; text-align: center; }
         .btn-green { background: #28a745; color: #fff; }
         .btn-blue { background: #007bff; color: #fff; }
+        .btn-secondary { background: #333; color: #ff9800; border: 1px dashed #ff9800; margin-bottom: 15px; }
         .btn-danger { background: #dc3545; color: #fff; }
         .search-box { margin-bottom: 15px; }
         .anime-item { background: #222; border: 1px solid #333; padding: 10px; border-radius: 6px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
@@ -30,6 +31,11 @@
         #app { display: none; }
         .status-msg { text-align: center; font-size: 0.85rem; margin-top: 8px; font-weight: bold; }
         .hint-text { font-size: 0.75rem; color: #888; margin-bottom: 8px; display: block; }
+        
+        /* تصميم حقول الحلقات المتعددة */
+        .ep-block { background: #111; border: 1px solid #2a2a2a; border-radius: 8px; padding: 12px; margin-bottom: 12px; position: relative; }
+        .ep-block-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; padding-bottom: 8px; margin-bottom: 10px; color: #ff9800; font-weight: bold; font-size: 0.9rem; }
+        .remove-ep-btn { background: #dc3545; color: #fff; border: none; border-radius: 4px; padding: 2px 8px; font-size: 0.75rem; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -84,20 +90,17 @@
             <div id="animeStatus" class="status-msg"></div>
         </div>
 
+        <!-- قسم إضافة الحلقات التوسعي والجامع -->
         <div class="card">
-            <h2>إضافة حلقة جديدة</h2>
+            <h2>🎬 إضافة الحلقات (حلقة واحدة أو دفعة)</h2>
             <label>معرف الأنمي (ID):</label>
             <input type="text" id="epAnimeId" placeholder="مثال: solo">
-            <label>رقم الحلقة:</label>
-            <input type="number" id="epNum" placeholder="1">
-            <label>رابط 1080p:</label>
-            <input type="text" id="link1080" placeholder="https://stape.me/e/...">
-            <label>رابط 720p:</label>
-            <input type="text" id="link720" placeholder="https://stape.me/e/...">
-            <label>رابط 360p:</label>
-            <input type="text" id="link360" placeholder="https://stape.me/e/...">
 
-            <button class="btn btn-green" onclick="addEpisode()">إضافة الحلقة</button>
+            <div id="episodesInputsContainer"></div>
+
+            <button type="button" class="btn btn-secondary" onclick="addEpisodeBlock()">➕ إضافة حلقة أخرى بالقائمة</button>
+
+            <button class="btn btn-green" onclick="addEpisodesBulk()">🚀 رفع جميع الحلقات المدخلة</button>
             <div id="epStatus" class="status-msg"></div>
         </div>
 
@@ -114,8 +117,8 @@
         const ADMIN_ID = 8649503815;
         let allAnimes = [];
         let sliderAnimes = [];
+        let epBlockCounter = 0;
 
-        // التحقق من تليغرام
         let user = null;
         if (window.Telegram && window.Telegram.WebApp) {
             window.Telegram.WebApp.expand();
@@ -127,7 +130,6 @@
         } else if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData !== "") {
             document.getElementById('loginBox').style.display = 'block';
         } else {
-            // إظهار صفحة التمويه وحجب التطبيق
             document.getElementById('app').remove();
             document.title = "Error";
             document.getElementById('errorOverlay').style.display = 'block';
@@ -166,6 +168,37 @@
             }
         }
 
+        // إنشاء كارت حلقة جديد
+        function addEpisodeBlock() {
+            epBlockCounter++;
+            const container = document.getElementById('episodesInputsContainer');
+            const block = document.createElement('div');
+            block.className = 'ep-block';
+            block.id = `epBlock_${epBlockCounter}`;
+
+            block.innerHTML = `
+                <div class="ep-block-header">
+                    <span>بيانات حلقة</span>
+                    ${epBlockCounter > 1 ? `<button type="button" class="remove-ep-btn" onclick="removeEpisodeBlock('epBlock_${epBlockCounter}')">إلغاء</button>` : ''}
+                </div>
+                <label>رقم الحلقة:</label>
+                <input type="number" class="bulk-ep-num" value="${epBlockCounter}" placeholder="1">
+                <label>رابط 1080p:</label>
+                <input type="text" class="bulk-link-1080" placeholder="https://stape.me/e/...">
+                <label>رابط 720p:</label>
+                <input type="text" class="bulk-link-720" placeholder="https://stape.me/e/...">
+                <label>رابط 360p:</label>
+                <input type="text" class="bulk-link-360" placeholder="https://stape.me/e/...">
+            `;
+
+            container.appendChild(block);
+        }
+
+        function removeEpisodeBlock(blockId) {
+            const block = document.getElementById(blockId);
+            if(block) block.remove();
+        }
+
         function fetchAnimes() {
             fetch(API_URL + "?t=" + new Date().getTime())
             .then(res => res.json())
@@ -191,6 +224,12 @@
                 
                 document.getElementById('sliderIdsInput').value = sliderAnimes.join(', ');
                 renderAnimeList(allAnimes);
+
+                // تهيئة أول كارت حلقة عند الجلب
+                if(document.getElementById('episodesInputsContainer').children.length === 0) {
+                    epBlockCounter = 0;
+                    addEpisodeBlock();
+                }
             })
             .catch(err => {
                 document.getElementById('animeList').innerHTML = '<p style="color:#aaa; text-align:center;">لا توجد أنميات مضافة حالياً.</p>';
@@ -285,43 +324,68 @@
             });
         }
 
-        function addEpisode() {
+        // دالة الرفع المباشر لجميع الحلقات المدخلة
+        function addEpisodesBulk() {
             const id = document.getElementById('epAnimeId').value.trim();
-            const epNum = document.getElementById('epNum').value.trim();
-            const l1080 = document.getElementById('link1080').value.trim();
-            const l720 = document.getElementById('link720').value.trim();
-            const l360 = document.getElementById('link360').value.trim();
             const status = document.getElementById('epStatus');
 
-            if(!id || !epNum) {
-                status.innerText = "❌ يرجى إدخال معرف الأنمي ورقم الحلقة";
+            if(!id) {
+                status.innerText = "❌ يرجى إدخال معرف الأنمي (ID)";
                 status.style.color = "#ff5252";
                 return;
             }
 
             let anime = allAnimes.find(a => a.id === id);
             if(!anime) {
-                status.innerText = "❌ الأنمي غير موجود!";
+                status.innerText = "❌ الأنمي غير موجود! أضف الأنمي أولاً أعلاه.";
                 status.style.color = "#ff5252";
                 return;
             }
 
-            status.innerText = "⏳ جاري إضافة الحلقة...";
-            status.style.color = "#ff9800";
+            const blocks = document.querySelectorAll('.ep-block');
+            let addedCount = 0;
 
             if(!anime.episodes) anime.episodes = [];
-            let servers = [];
-            if(l1080) servers.push({ quality: "1080p", embedUrl: l1080 });
-            if(l720) servers.push({ quality: "720p", embedUrl: l720 });
-            if(l360) servers.push({ quality: "360p", embedUrl: l360 });
 
-            anime.episodes = anime.episodes.filter(e => e.ep != epNum);
-            anime.episodes.push({ ep: parseInt(epNum), servers });
+            blocks.forEach(block => {
+                const epNum = block.querySelector('.bulk-ep-num').value.trim();
+                const l1080 = block.querySelector('.bulk-link-1080').value.trim();
+                const l720 = block.querySelector('.bulk-link-720').value.trim();
+                const l360 = block.querySelector('.bulk-link-360').value.trim();
+
+                if(epNum) {
+                    let servers = [];
+                    if(l1080) servers.push({ quality: "1080p", embedUrl: l1080 });
+                    if(l720) servers.push({ quality: "720p", embedUrl: l720 });
+                    if(l360) servers.push({ quality: "360p", embedUrl: l360 });
+
+                    if(servers.length > 0) {
+                        anime.episodes = anime.episodes.filter(e => e.ep != epNum);
+                        anime.episodes.push({ ep: parseInt(epNum), servers });
+                        addedCount++;
+                    }
+                }
+            });
+
+            if(addedCount === 0) {
+                status.innerText = "❌ لم يتم إدخال أي روابط حلقة صالحة!";
+                status.style.color = "#ff5252";
+                return;
+            }
+
+            status.innerText = `⏳ جاري رفع وتشفير ${addedCount} حلقة...`;
+            status.style.color = "#ff9800";
+
             anime.lastReset = Date.now();
 
             saveToWorker(allAnimes, sliderAnimes, () => {
-                status.innerText = "✅ تم إضافة الحلقة وتشفير البيانات بنجاح!";
+                status.innerText = `✅ تم رفع وتشفير ${addedCount} حلقة بنجاح دفعة واحدة!`;
                 status.style.color = "#28a745";
+                
+                // إعادة تفريغ الحقول وإعادتها لكارت واحد
+                document.getElementById('episodesInputsContainer').innerHTML = '';
+                epBlockCounter = 0;
+                addEpisodeBlock();
                 fetchAnimes();
             });
         }
