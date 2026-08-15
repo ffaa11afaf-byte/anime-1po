@@ -235,8 +235,8 @@
                 </div>
                 <label>رقم الحلقة:</label>
                 <input type="number" class="bulk-ep-num" value="${epBlockCounter}" placeholder="1">
-                <label>روابط الجودات (إلصق 3 سطور بالترتيب: 360p ثم 720p ثم 1080p):</label>
-                <textarea class="bulk-links-textarea" placeholder="https://stape.me/e/360p...\nhttps://stape.me/e/720p...\nhttps://stape.me/e/1080p..."></textarea>
+                <label>روابط الجودات (الترتيب: 360p ثم 720p ثم 1080p - اكتب / للتجاهل):</label>
+                <textarea class="bulk-links-textarea" placeholder="https://stape.me/e/360p...\n/\nhttps://stape.me/e/1080p..."></textarea>
             `;
 
             container.appendChild(block);
@@ -318,7 +318,7 @@
             const anime = allAnimes.find(a => a.id === animeId);
             if(!anime) return;
 
-            activeEditAnime = JSON.parse(JSON.stringify(anime)); // نسخة للعمل المباشر
+            activeEditAnime = JSON.parse(JSON.stringify(anime));
 
             document.getElementById('mAnimeOldId').value = anime.id;
             document.getElementById('mAnimeId').value = anime.id;
@@ -348,9 +348,9 @@
             }
 
             activeEditAnime.episodes.sort((a,b) => a.ep - b.ep).forEach(ep => {
-                const l360 = ep.servers?.find(s => s.quality === "360p")?.embedUrl || "";
-                const l720 = ep.servers?.find(s => s.quality === "720p")?.embedUrl || "";
-                const l1080 = ep.servers?.find(s => s.quality === "1080p")?.embedUrl || "";
+                const l360 = ep.servers?.find(s => s.quality === "360p")?.embedUrl || "/";
+                const l720 = ep.servers?.find(s => s.quality === "720p")?.embedUrl || "/";
+                const l1080 = ep.servers?.find(s => s.quality === "1080p")?.embedUrl || "/";
 
                 const rawText = `${l360}\n${l720}\n${l1080}`.trim();
 
@@ -361,7 +361,7 @@
                         <span>حلقة ${ep.ep}</span>
                         <button type="button" class="remove-ep-btn" onclick="deleteModalEp(${ep.ep})">حذف الحلقة</button>
                     </div>
-                    <label>روابط الجودات (360p ثم 720p ثم 1080p):</label>
+                    <label>روابط الجودات (الترتيب: 360p ثم 720p ثم 1080p):</label>
                     <textarea id="mEpText_${ep.ep}">${rawText}</textarea>
                 `;
                 container.appendChild(epItem);
@@ -372,6 +372,13 @@
             if(!confirm(`هل تريد حذف الحلقة ${epNum}؟`)) return;
             activeEditAnime.episodes = activeEditAnime.episodes.filter(e => e.ep != epNum);
             renderModalEpisodes();
+        }
+
+        // دالة فحص ما إذا كان السطر متجاهلاً أم رابطاً حقيقياً
+        function isValidUrlLine(line) {
+            if (!line) return false;
+            const clean = line.trim().toLowerCase();
+            return clean !== "" && clean !== "/" && clean !== "0" && clean !== "none" && clean !== "-";
         }
 
         function saveModalChanges() {
@@ -391,20 +398,20 @@
                 return;
             }
 
-            // تحديث الحلقات ورائعة الأسطر
             if(activeEditAnime.episodes) {
                 activeEditAnime.episodes.forEach(ep => {
                     const textEl = document.getElementById(`mEpText_${ep.ep}`);
                     if(textEl) {
-                        const lines = textEl.value.trim().split('\n').map(l => l.trim()).filter(l => l !== "");
+                        const lines = textEl.value.split('\n').map(l => l.trim());
                         let l360 = lines[0] || "";
                         let l720 = lines[1] || "";
                         let l1080 = lines[2] || "";
 
                         let servers = [];
-                        if(l1080) servers.push({ quality: "1080p", embedUrl: l1080 });
-                        if(l720) servers.push({ quality: "720p", embedUrl: l720 });
-                        if(l360) servers.push({ quality: "360p", embedUrl: l360 });
+                        if(isValidUrlLine(l1080)) servers.push({ quality: "1080p", embedUrl: l1080 });
+                        if(isValidUrlLine(l720)) servers.push({ quality: "720p", embedUrl: l720 });
+                        if(isValidUrlLine(l360)) servers.push({ quality: "360p", embedUrl: l360 });
+
                         ep.servers = servers;
                     }
                 });
@@ -524,16 +531,16 @@
                 const rawLinksText = block.querySelector('.bulk-links-textarea').value.trim();
 
                 if(epNum && rawLinksText) {
-                    const lines = rawLinksText.split('\n').map(line => line.trim()).filter(line => line !== "");
+                    const lines = rawLinksText.split('\n').map(line => line.trim());
 
                     let l360 = lines[0] || "";
                     let l720 = lines[1] || "";
                     let l1080 = lines[2] || "";
 
                     let servers = [];
-                    if(l1080) servers.push({ quality: "1080p", embedUrl: l1080 });
-                    if(l720) servers.push({ quality: "720p", embedUrl: l720 });
-                    if(l360) servers.push({ quality: "360p", embedUrl: l360 });
+                    if(isValidUrlLine(l1080)) servers.push({ quality: "1080p", embedUrl: l1080 });
+                    if(isValidUrlLine(l720)) servers.push({ quality: "720p", embedUrl: l720 });
+                    if(isValidUrlLine(l360)) servers.push({ quality: "360p", embedUrl: l360 });
 
                     if(servers.length > 0) {
                         anime.episodes = anime.episodes.filter(e => e.ep != epNum);
