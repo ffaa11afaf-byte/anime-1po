@@ -16,8 +16,9 @@
         h1, h2 { color: #ff9800; text-align: center; margin-bottom: 15px; font-size: 1.3rem; }
         .card { background: #1a1a1a; border: 1px solid #333; border-radius: 10px; padding: 15px; margin-bottom: 15px; }
         label { display: block; margin: 8px 0 4px; font-size: 0.85rem; color: #bbb; }
-        input, select { width: 100%; padding: 10px; background: #222; border: 1px solid #444; color: #fff; border-radius: 6px; font-size: 0.9rem; margin-bottom: 8px; }
-        input:focus, select:focus { border-color: #ff9800; outline: none; }
+        input, select, textarea { width: 100%; padding: 10px; background: #222; border: 1px solid #444; color: #fff; border-radius: 6px; font-size: 0.9rem; margin-bottom: 8px; }
+        textarea { height: 90px; resize: vertical; font-family: monospace; direction: ltr; text-align: left; font-size: 0.8rem; }
+        input:focus, select:focus, textarea:focus { border-color: #ff9800; outline: none; }
         .btn { display: block; width: 100%; background: #ff9800; color: #000; font-weight: bold; padding: 12px; border: none; border-radius: 8px; margin-top: 12px; cursor: pointer; font-size: 0.95rem; text-align: center; }
         .btn-green { background: #28a745; color: #fff; }
         .btn-blue { background: #007bff; color: #fff; }
@@ -32,7 +33,7 @@
         .status-msg { text-align: center; font-size: 0.85rem; margin-top: 8px; font-weight: bold; }
         .hint-text { font-size: 0.75rem; color: #888; margin-bottom: 8px; display: block; }
         
-        /* تصميم حقول الحلقات المتعددة */
+        /* تصميم كروت الحلقات بمربع اللصق المجمع */
         .ep-block { background: #111; border: 1px solid #2a2a2a; border-radius: 8px; padding: 12px; margin-bottom: 12px; position: relative; }
         .ep-block-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; padding-bottom: 8px; margin-bottom: 10px; color: #ff9800; font-weight: bold; font-size: 0.9rem; }
         .remove-ep-btn { background: #dc3545; color: #fff; border: none; border-radius: 4px; padding: 2px 8px; font-size: 0.75rem; cursor: pointer; }
@@ -90,9 +91,9 @@
             <div id="animeStatus" class="status-msg"></div>
         </div>
 
-        <!-- قسم إضافة الحلقات التوسعي والجامع -->
+        <!-- قسم إضافة الحلقات بأسلوب اللصق المجمع المريح -->
         <div class="card">
-            <h2>🎬 إضافة الحلقات (حلقة واحدة أو دفعة)</h2>
+            <h2>🎬 إضافة الحلقات (لصق مجمع للجودات)</h2>
             <label>معرف الأنمي (ID):</label>
             <input type="text" id="epAnimeId" placeholder="مثال: solo">
 
@@ -168,7 +169,7 @@
             }
         }
 
-        // إنشاء كارت حلقة جديد
+        // إنشاء كارت حلقة جديد بمربع نص واحد كبير لـ 3 روابط
         function addEpisodeBlock() {
             epBlockCounter++;
             const container = document.getElementById('episodesInputsContainer');
@@ -183,12 +184,8 @@
                 </div>
                 <label>رقم الحلقة:</label>
                 <input type="number" class="bulk-ep-num" value="${epBlockCounter}" placeholder="1">
-                <label>رابط 1080p:</label>
-                <input type="text" class="bulk-link-1080" placeholder="https://stape.me/e/...">
-                <label>رابط 720p:</label>
-                <input type="text" class="bulk-link-720" placeholder="https://stape.me/e/...">
-                <label>رابط 360p:</label>
-                <input type="text" class="bulk-link-360" placeholder="https://stape.me/e/...">
+                <label>روابط الجودات (إلصق 3 سطور بالترتيب: 360p ثم 720p ثم 1080p):</label>
+                <textarea class="bulk-links-textarea" placeholder="https://stape.me/e/360p...\nhttps://stape.me/e/720p...\nhttps://stape.me/e/1080p..."></textarea>
             `;
 
             container.appendChild(block);
@@ -225,7 +222,6 @@
                 document.getElementById('sliderIdsInput').value = sliderAnimes.join(', ');
                 renderAnimeList(allAnimes);
 
-                // تهيئة أول كارت حلقة عند الجلب
                 if(document.getElementById('episodesInputsContainer').children.length === 0) {
                     epBlockCounter = 0;
                     addEpisodeBlock();
@@ -324,7 +320,7 @@
             });
         }
 
-        // دالة الرفع المباشر لجميع الحلقات المدخلة
+        // دالة الرفع المباشر الذكية لمعالجة الأسطر الثلاثة وتوزيع الجودات
         function addEpisodesBulk() {
             const id = document.getElementById('epAnimeId').value.trim();
             const status = document.getElementById('epStatus');
@@ -349,11 +345,16 @@
 
             blocks.forEach(block => {
                 const epNum = block.querySelector('.bulk-ep-num').value.trim();
-                const l1080 = block.querySelector('.bulk-link-1080').value.trim();
-                const l720 = block.querySelector('.bulk-link-720').value.trim();
-                const l360 = block.querySelector('.bulk-link-360').value.trim();
+                const rawLinksText = block.querySelector('.bulk-links-textarea').value.trim();
 
-                if(epNum) {
+                if(epNum && rawLinksText) {
+                    // تقسيم النص لأسطر بناءً على النزول للسطر الجديد
+                    const lines = rawLinksText.split('\n').map(line => line.trim()).filter(line => line !== "");
+
+                    let l360 = lines[0] || "";
+                    let l720 = lines[1] || "";
+                    let l1080 = lines[2] || "";
+
                     let servers = [];
                     if(l1080) servers.push({ quality: "1080p", embedUrl: l1080 });
                     if(l720) servers.push({ quality: "720p", embedUrl: l720 });
@@ -368,7 +369,7 @@
             });
 
             if(addedCount === 0) {
-                status.innerText = "❌ لم يتم إدخال أي روابط حلقة صالحة!";
+                status.innerText = "❌ لم يتم إدخال أي روابط صالحة!";
                 status.style.color = "#ff5252";
                 return;
             }
@@ -382,7 +383,6 @@
                 status.innerText = `✅ تم رفع وتشفير ${addedCount} حلقة بنجاح دفعة واحدة!`;
                 status.style.color = "#28a745";
                 
-                // إعادة تفريغ الحقول وإعادتها لكارت واحد
                 document.getElementById('episodesInputsContainer').innerHTML = '';
                 epBlockCounter = 0;
                 addEpisodeBlock();
