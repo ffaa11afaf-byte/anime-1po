@@ -115,17 +115,19 @@
         let allAnimes = [];
         let sliderAnimes = [];
 
-        const tg = window.Telegram.WebApp;
-        tg.expand();
-        const user = tg.initDataUnsafe?.user;
+        // التحقق من تليغرام
+        let user = null;
+        if (window.Telegram && window.Telegram.WebApp) {
+            window.Telegram.WebApp.expand();
+            user = window.Telegram.WebApp.initDataUnsafe?.user;
+        }
 
-        if (user || window.Telegram.WebApp.initData !== "") {
-            if (user && user.id === ADMIN_ID) {
-                unlockApp();
-            } else {
-                document.getElementById('loginBox').style.display = 'block';
-            }
+        if (user && user.id === ADMIN_ID) {
+            unlockApp();
+        } else if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData !== "") {
+            document.getElementById('loginBox').style.display = 'block';
         } else {
+            // إظهار صفحة التمويه وحجب التطبيق
             document.getElementById('app').remove();
             document.title = "Error";
             document.getElementById('errorOverlay').style.display = 'block';
@@ -141,6 +143,7 @@
         }
 
         function unlockApp() {
+            document.getElementById('loginBox').style.display = 'none';
             document.getElementById('app').style.display = 'block';
             fetchAnimes();
         }
@@ -164,7 +167,7 @@
         }
 
         function fetchAnimes() {
-            fetch(API_URL)
+            fetch(API_URL + "?t=" + new Date().getTime())
             .then(res => res.json())
             .then(data => {
                 let rec = data.record ? data.record : data;
