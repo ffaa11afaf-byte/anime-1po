@@ -298,11 +298,14 @@
                     ? anime.episodes[anime.episodes.length - 1].ep 
                     : 1;
 
+                // استخدام صورة Banner إذا وجدت، أو التراجع للبوستر
+                const sliderImgUrl = (anime.banner && anime.banner.trim() !== "") ? anime.banner : anime.poster;
+
                 const slide = document.createElement('a');
                 slide.href = `episodes.html?id=${anime.id}`;
                 slide.className = 'slide-card';
                 slide.innerHTML = `
-                    <img src="${anime.poster}" class="slide-img" alt="${anime.title}">
+                    <img src="${sliderImgUrl}" class="slide-img" alt="${anime.title}">
                     <div class="slide-overlay">
                         <div class="slide-title">${anime.title}</div>
                         <div class="slide-badge">الحلقة ${lastEp}</div>
