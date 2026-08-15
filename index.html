@@ -13,7 +13,7 @@
     
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stream season - الرئيسية</title>
+    <title>SeaStream - الرئيسية</title>
     
     <!-- مكتبة فك التشفير -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
@@ -22,9 +22,9 @@
         * { box-sizing: border-box; font-family: sans-serif; text-decoration: none; }
         body { background: #0f0f12; color: white; margin: 0; padding: 15px 10px; text-align: center; display: flex; flex-direction: column; min-height: 100vh; justify-content: space-between; }
         
-        header { margin-bottom: 15px; }
-        header h1 { font-size: 1.8rem; color: #ff9800; margin: 0 0 5px 0; font-weight: bold; }
-        header p { color: #aaa; font-size: 0.85rem; margin: 0; }
+        header { margin-bottom: 20px; text-align: center; }
+        header h1 { font-size: 2rem; color: #ff9800; margin: 0 0 6px 0; font-weight: bold; text-align: center; }
+        header p { color: #aaa; font-size: 0.88rem; margin: 0; text-align: center; }
 
         .container { max-width: 1000px; margin: 0 auto; width: 100%; text-align: right; }
         .section-title { font-size: 1.1rem; color: #fff; margin: 20px 0 10px 0; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
@@ -51,19 +51,22 @@
         .ad-container { margin: 10px auto; text-align: center; width: 100%; overflow: hidden; }
         .ad-label { color: #666; font-size: 0.75rem; margin: 25px 0 5px 0; text-align: center; letter-spacing: 1px; }
 
-        /* 1. السلايدر العلوي الذكي */
-        .slider-wrapper { position: relative; width: 100%; overflow: hidden; border-radius: 12px; margin-bottom: 25px; background: #1a1a1a; border: 1px solid #2a2a2a; touch-action: pan-y; user-select: none; }
+        /* 1. السلايدر العلوي الذكي - واسع ومطابق للتطبيقات الاحترافية */
+        .slider-wrapper { position: relative; width: 100%; overflow: hidden; border-radius: 16px; margin-bottom: 25px; background: #16161a; border: 1px solid #2a2a2a; touch-action: pan-y; user-select: none; }
         .slider-container { display: flex; transition: transform 0.4s ease-out; width: 100%; cursor: grab; }
         .slider-container:active { cursor: grabbing; }
-        .slide-card { min-width: 100%; position: relative; height: 210px; display: block; overflow: hidden; }
-        .slide-img { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.75); pointer-events: none; }
-        .slide-overlay { position: absolute; bottom: 0; left: 0; right: 0; padding: 15px; background: linear-gradient(transparent, rgba(0,0,0,0.9)); display: flex; flex-direction: column; align-items: flex-start; pointer-events: none; }
-        .slide-title { font-size: 1.2rem; font-weight: bold; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.8); margin-bottom: 4px; direction: ltr; text-align: right; unicode-bidi: plaintext; }
-        .slide-badge { background: rgba(255, 152, 0, 0.2); color: #ff9800; border: 1px solid #ff9800; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; }
+        .slide-card { min-width: 100%; position: relative; height: 260px; display: block; overflow: hidden; }
+        .slide-img { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.82); pointer-events: none; }
+        .slide-overlay { position: absolute; bottom: 0; left: 0; right: 0; padding: 20px 18px 30px 18px; background: linear-gradient(transparent, rgba(0,0,0,0.92)); display: flex; flex-direction: column; align-items: flex-start; pointer-events: none; }
+        .slide-title { font-size: 1.25rem; font-weight: bold; color: #fff; text-shadow: 0 2px 6px rgba(0,0,0,0.9); margin-bottom: 8px; direction: ltr; text-align: right; unicode-bidi: plaintext; }
         
-        .slider-dots { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; z-index: 10; }
-        .dot { width: 8px; height: 8px; background: rgba(255,255,255,0.4); border-radius: 50%; transition: 0.3s; cursor: pointer; }
-        .dot.active { background: #ff9800; width: 20px; border-radius: 10px; }
+        /* مربع رقم الحلقة شفاف وأنيق بنفس الألوان البرتقالية */
+        .slide-badge { background: rgba(255, 152, 0, 0.15); color: #ff9800; border: 1px solid rgba(255, 152, 0, 0.4); backdrop-filter: blur(4px); padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: bold; }
+        
+        /* نقاط السلايدر أسفل الصورة داخل الإطار */
+        .slider-dots { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; z-index: 10; }
+        .dot { width: 8px; height: 8px; background: rgba(255,255,255,0.3); border-radius: 50%; transition: 0.3s; cursor: pointer; }
+        .dot.active { background: #ff9800; width: 22px; border-radius: 10px; }
 
         /* 2. شريط آخر المشاهدات */
         .continue-section { display: none; margin-bottom: 25px; }
@@ -96,7 +99,7 @@
 
     <div class="container">
         <header>
-            <h1>Stream season</h1>
+            <h1>SeaStream</h1>
             <p>شاهد أحدث الأنميات والحلقات المترجمة بدقة عالية</p>
         </header>
 
@@ -298,7 +301,6 @@
                     ? anime.episodes[anime.episodes.length - 1].ep 
                     : 1;
 
-                // استخدام صورة Banner إذا وجدت، أو التراجع للبوستر
                 const sliderImgUrl = (anime.banner && anime.banner.trim() !== "") ? anime.banner : anime.poster;
 
                 const slide = document.createElement('a');
