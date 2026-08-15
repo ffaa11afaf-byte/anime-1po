@@ -17,7 +17,7 @@
         .card { background: #1a1a1a; border: 1px solid #333; border-radius: 10px; padding: 15px; margin-bottom: 15px; }
         label { display: block; margin: 8px 0 4px; font-size: 0.85rem; color: #bbb; }
         input, select, textarea { width: 100%; padding: 10px; background: #222; border: 1px solid #444; color: #fff; border-radius: 6px; font-size: 0.9rem; margin-bottom: 8px; }
-        textarea { height: 90px; resize: vertical; font-family: monospace; direction: ltr; text-align: left; font-size: 0.8rem; }
+        textarea { height: 85px; resize: vertical; font-family: monospace; direction: ltr; text-align: left; font-size: 0.8rem; }
         input:focus, select:focus, textarea:focus { border-color: #ff9800; outline: none; }
         .btn { display: block; width: 100%; background: #ff9800; color: #000; font-weight: bold; padding: 12px; border: none; border-radius: 8px; margin-top: 12px; cursor: pointer; font-size: 0.95rem; text-align: center; }
         .btn-green { background: #28a745; color: #fff; }
@@ -25,18 +25,27 @@
         .btn-secondary { background: #333; color: #ff9800; border: 1px dashed #ff9800; margin-bottom: 15px; }
         .btn-danger { background: #dc3545; color: #fff; }
         .search-box { margin-bottom: 15px; }
-        .anime-item { background: #222; border: 1px solid #333; padding: 10px; border-radius: 6px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
-        .anime-info { font-weight: bold; font-size: 0.9rem; }
-        .anime-actions { display: flex; gap: 5px; }
-        .sm-btn { padding: 5px 10px; font-size: 0.75rem; border-radius: 4px; border: none; cursor: pointer; }
+        
+        .anime-item { background: #222; border: 1px solid #333; padding: 12px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: 0.2s; }
+        .anime-item:hover { border-color: #ff9800; background: #282828; }
+        .anime-info { font-weight: bold; font-size: 0.88rem; color: #fff; }
+        .anime-actions { display: flex; gap: 6px; }
+        .sm-btn { padding: 6px 12px; font-size: 0.75rem; border-radius: 4px; border: none; cursor: pointer; font-weight: bold; }
+        
         #app { display: none; }
         .status-msg { text-align: center; font-size: 0.85rem; margin-top: 8px; font-weight: bold; }
         .hint-text { font-size: 0.75rem; color: #888; margin-bottom: 8px; display: block; }
         
-        /* تصميم كروت الحلقات بمربع اللصق المجمع */
         .ep-block { background: #111; border: 1px solid #2a2a2a; border-radius: 8px; padding: 12px; margin-bottom: 12px; position: relative; }
         .ep-block-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; padding-bottom: 8px; margin-bottom: 10px; color: #ff9800; font-weight: bold; font-size: 0.9rem; }
         .remove-ep-btn { background: #dc3545; color: #fff; border: none; border-radius: 4px; padding: 2px 8px; font-size: 0.75rem; cursor: pointer; }
+
+        /* نافذة التعديل الشاملة المحسنة */
+        .edit-modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 10000; overflow-y: auto; padding: 20px 10px; }
+        .edit-modal { background: #1a1a1a; border: 1px solid #ff9800; border-radius: 12px; max-width: 600px; margin: 0 auto; padding: 20px; position: relative; }
+        .close-modal-btn { position: absolute; top: 12px; left: 12px; background: #dc3545; color: #fff; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; font-weight: bold; }
+        .modal-ep-item { background: #111; border: 1px solid #333; border-radius: 6px; padding: 10px; margin-bottom: 8px; }
+        .modal-ep-title { color: #ff9800; font-size: 0.85rem; font-weight: bold; margin-bottom: 6px; display: flex; justify-content: space-between; }
     </style>
 </head>
 <body>
@@ -64,14 +73,17 @@
             <div id="sliderStatus" class="status-msg"></div>
         </div>
 
+        <!-- قسم إضافة أنمي جديد -->
         <div class="card">
-            <h2>إضافة / تحديث أنمي</h2>
+            <h2>إضافة أنمي جديد</h2>
             <label>معرف الأنمي (ID):</label>
             <input type="text" id="animeId" placeholder="مثال: solo">
             <label>عنوان الأنمي:</label>
             <input type="text" id="animeTitle" placeholder="مثال: Solo Leveling">
-            <label>رابط البوستر:</label>
+            <label>رابط البوستر العمودي:</label>
             <input type="text" id="animePoster" placeholder="https://...">
+            <label>رابط صورة السلايدر الأفقية (Banner - اختياري):</label>
+            <input type="text" id="animeBanner" placeholder="https://... (اختياري للسلايدر)">
             <label>إجمالي الحلقات المتوقعة:</label>
             <input type="number" id="animeTotalEps" placeholder="مثال: 12 أو 24">
             <label>يوم العرض:</label>
@@ -87,11 +99,11 @@
             <label>وقت العرض:</label>
             <input type="text" id="airTime" placeholder="21:00">
 
-            <button class="btn" onclick="saveAnime()">حفظ البيانات</button>
+            <button class="btn" onclick="saveAnime()">حفظ الأنمي</button>
             <div id="animeStatus" class="status-msg"></div>
         </div>
 
-        <!-- قسم إضافة الحلقات بأسلوب اللصق المجمع المريح -->
+        <!-- قسم إضافة الحلقات بأسلوب اللصق المجمع -->
         <div class="card">
             <h2>🎬 إضافة الحلقات (لصق مجمع للجودات)</h2>
             <label>معرف الأنمي (ID):</label>
@@ -105,10 +117,49 @@
             <div id="epStatus" class="status-msg"></div>
         </div>
 
+        <!-- قسم قائمة الأنميات وإدارتها التفاعلية -->
         <div class="card">
-            <h2>قائمة الأنميات المضافة</h2>
+            <h2>قائمة الأنميات المضافة (انقر للتعديل الشامل)</h2>
             <input type="text" id="searchBox" class="search-box" placeholder="بحث عن أنمي..." oninput="filterAnimes()">
             <div id="animeList">جاري جلب البيانات...</div>
+        </div>
+    </div>
+
+    <!-- نافذة تعديل الأنمي والحلقات الشاملة (Modal) -->
+    <div id="editModalOverlay" class="edit-modal-overlay">
+        <div class="edit-modal">
+            <button class="close-modal-btn" onclick="closeEditModal()">✕</button>
+            <h2 style="color:#ff9800; margin-top:0;">✏️ تعديل بيانات الأنمي والحلقات</h2>
+            <input type="hidden" id="mAnimeOldId">
+            
+            <label>معرف الأنمي (ID):</label>
+            <input type="text" id="mAnimeId">
+            <label>عنوان الأنمي:</label>
+            <input type="text" id="mAnimeTitle">
+            <label>رابط البوستر العمودي:</label>
+            <input type="text" id="mAnimePoster">
+            <label>رابط صورة السلايدر الأفقية (Banner):</label>
+            <input type="text" id="mAnimeBanner">
+            <label>إجمالي الحلقات المتوقعة:</label>
+            <input type="number" id="mAnimeTotalEps">
+            <label>يوم العرض:</label>
+            <select id="mAirDay">
+                <option value="0">الأحد (0)</option>
+                <option value="1">الإثنين (1)</option>
+                <option value="2">الثلاثاء (2)</option>
+                <option value="3">الأربعاء (3)</option>
+                <option value="4">الخميس (4)</option>
+                <option value="5">الجمعة (5)</option>
+                <option value="6">السبت (6)</option>
+            </select>
+            <label>وقت العرض:</label>
+            <input type="text" id="mAirTime">
+
+            <h3 style="color:#ff9800; margin-top:20px; border-bottom:1px solid #333; padding-bottom:5px;">📺 إدارة الحلقات المضافة</h3>
+            <div id="mEpisodesList"></div>
+
+            <button class="btn btn-green" onclick="saveModalChanges()" style="margin-top:15px;">💾 حفظ كافة التعديلات</button>
+            <div id="mStatus" class="status-msg"></div>
         </div>
     </div>
 
@@ -119,6 +170,7 @@
         let allAnimes = [];
         let sliderAnimes = [];
         let epBlockCounter = 0;
+        let activeEditAnime = null;
 
         let user = null;
         if (window.Telegram && window.Telegram.WebApp) {
@@ -169,7 +221,6 @@
             }
         }
 
-        // إنشاء كارت حلقة جديد بمربع نص واحد كبير لـ 3 روابط
         function addEpisodeBlock() {
             epBlockCounter++;
             const container = document.getElementById('episodesInputsContainer');
@@ -244,9 +295,11 @@
                 const totalEps = anime.totalEps ? anime.totalEps : '?';
                 const item = document.createElement('div');
                 item.className = 'anime-item';
+                item.onclick = () => openEditModal(anime.id);
                 item.innerHTML = `
-                    <div class="anime-info">${anime.title} (${anime.id}) - ${epCount}/${totalEps} حلقة</div>
-                    <div class="anime-actions">
+                    <div class="anime-info">📌 ${anime.title} (${anime.id}) - ${epCount}/${totalEps} حلقة</div>
+                    <div class="anime-actions" onclick="event.stopPropagation()">
+                        <button class="sm-btn btn-blue" onclick="openEditModal('${anime.id}')">تعديل</button>
                         <button class="sm-btn btn-danger" onclick="deleteAnime('${anime.id}')">حذف</button>
                     </div>
                 `;
@@ -260,6 +313,130 @@
             renderAnimeList(filtered);
         }
 
+        /* دالة فتح نافذة التعديل الشاملة للأنمي وحلقاته */
+        function openEditModal(animeId) {
+            const anime = allAnimes.find(a => a.id === animeId);
+            if(!anime) return;
+
+            activeEditAnime = JSON.parse(JSON.stringify(anime)); // نسخة للعمل المباشر
+
+            document.getElementById('mAnimeOldId').value = anime.id;
+            document.getElementById('mAnimeId').value = anime.id;
+            document.getElementById('mAnimeTitle').value = anime.title || '';
+            document.getElementById('mAnimePoster').value = anime.poster || '';
+            document.getElementById('mAnimeBanner').value = anime.banner || '';
+            document.getElementById('mAnimeTotalEps').value = anime.totalEps || '';
+            document.getElementById('mAirDay').value = anime.airDay !== undefined ? anime.airDay : 0;
+            document.getElementById('mAirTime').value = anime.airTime || '';
+
+            renderModalEpisodes();
+            document.getElementById('editModalOverlay').style.display = 'block';
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModalOverlay').style.display = 'none';
+            activeEditAnime = null;
+        }
+
+        function renderModalEpisodes() {
+            const container = document.getElementById('mEpisodesList');
+            container.innerHTML = '';
+
+            if(!activeEditAnime.episodes || activeEditAnime.episodes.length === 0) {
+                container.innerHTML = '<p style="color:#888; font-size:0.8rem;">لا توجد حلقات مضافة لهذا الأنمي بعد.</p>';
+                return;
+            }
+
+            activeEditAnime.episodes.sort((a,b) => a.ep - b.ep).forEach(ep => {
+                const l360 = ep.servers?.find(s => s.quality === "360p")?.embedUrl || "";
+                const l720 = ep.servers?.find(s => s.quality === "720p")?.embedUrl || "";
+                const l1080 = ep.servers?.find(s => s.quality === "1080p")?.embedUrl || "";
+
+                const rawText = `${l360}\n${l720}\n${l1080}`.trim();
+
+                const epItem = document.createElement('div');
+                epItem.className = 'modal-ep-item';
+                epItem.innerHTML = `
+                    <div class="modal-ep-title">
+                        <span>حلقة ${ep.ep}</span>
+                        <button type="button" class="remove-ep-btn" onclick="deleteModalEp(${ep.ep})">حذف الحلقة</button>
+                    </div>
+                    <label>روابط الجودات (360p ثم 720p ثم 1080p):</label>
+                    <textarea id="mEpText_${ep.ep}">${rawText}</textarea>
+                `;
+                container.appendChild(epItem);
+            });
+        }
+
+        function deleteModalEp(epNum) {
+            if(!confirm(`هل تريد حذف الحلقة ${epNum}؟`)) return;
+            activeEditAnime.episodes = activeEditAnime.episodes.filter(e => e.ep != epNum);
+            renderModalEpisodes();
+        }
+
+        function saveModalChanges() {
+            const oldId = document.getElementById('mAnimeOldId').value;
+            const newId = document.getElementById('mAnimeId').value.trim();
+            const newTitle = document.getElementById('mAnimeTitle').value.trim();
+            const newPoster = document.getElementById('mAnimePoster').value.trim();
+            const newBanner = document.getElementById('mAnimeBanner').value.trim();
+            const newTotalEps = parseInt(document.getElementById('mAnimeTotalEps').value) || 0;
+            const newAirDay = parseInt(document.getElementById('mAirDay').value);
+            const newAirTime = document.getElementById('mAirTime').value.trim();
+            const mStatus = document.getElementById('mStatus');
+
+            if(!newId || !newTitle || !newPoster) {
+                mStatus.innerText = "❌ يرجى ملء البيانات الأساسية";
+                mStatus.style.color = "#ff5252";
+                return;
+            }
+
+            // تحديث الحلقات ورائعة الأسطر
+            if(activeEditAnime.episodes) {
+                activeEditAnime.episodes.forEach(ep => {
+                    const textEl = document.getElementById(`mEpText_${ep.ep}`);
+                    if(textEl) {
+                        const lines = textEl.value.trim().split('\n').map(l => l.trim()).filter(l => l !== "");
+                        let l360 = lines[0] || "";
+                        let l720 = lines[1] || "";
+                        let l1080 = lines[2] || "";
+
+                        let servers = [];
+                        if(l1080) servers.push({ quality: "1080p", embedUrl: l1080 });
+                        if(l720) servers.push({ quality: "720p", embedUrl: l720 });
+                        if(l360) servers.push({ quality: "360p", embedUrl: l360 });
+                        ep.servers = servers;
+                    }
+                });
+            }
+
+            mStatus.innerText = "⏳ جاري حفظ التعديلات...";
+            mStatus.style.color = "#ff9800";
+
+            let targetIndex = allAnimes.findIndex(a => a.id === oldId);
+            if(targetIndex !== -1) {
+                allAnimes[targetIndex] = {
+                    ...activeEditAnime,
+                    id: newId,
+                    title: newTitle,
+                    poster: newPoster,
+                    banner: newBanner,
+                    totalEps: newTotalEps,
+                    airDay: newAirDay,
+                    airTime: newAirTime
+                };
+            }
+
+            saveToWorker(allAnimes, sliderAnimes, () => {
+                mStatus.innerText = "✅ تم حفظ جميع التعديلات بنجاح!";
+                mStatus.style.color = "#28a745";
+                setTimeout(() => {
+                    closeEditModal();
+                    fetchAnimes();
+                }, 1000);
+            });
+        }
+
         function saveSliderAnimes() {
             const rawInput = document.getElementById('sliderIdsInput').value.trim();
             const status = document.getElementById('sliderStatus');
@@ -268,9 +445,7 @@
                               .map(id => id.trim().toLowerCase())
                               .filter(id => id !== "");
 
-            if(ids.length > 9) {
-                ids = ids.slice(0, 9);
-            }
+            if(ids.length > 9) ids = ids.slice(0, 9);
 
             sliderAnimes = ids;
             status.innerText = "⏳ جاري حفظ قائمة السلايدر...";
@@ -287,6 +462,7 @@
             const id = document.getElementById('animeId').value.trim();
             const title = document.getElementById('animeTitle').value.trim();
             const poster = document.getElementById('animePoster').value.trim();
+            const banner = document.getElementById('animeBanner').value.trim();
             const totalEpsInput = document.getElementById('animeTotalEps').value.trim();
             const totalEps = totalEpsInput ? parseInt(totalEpsInput) : 0;
             const airDay = parseInt(document.getElementById('airDay').value);
@@ -306,11 +482,12 @@
             if(existing) {
                 existing.title = title;
                 existing.poster = poster;
+                existing.banner = banner;
                 existing.totalEps = totalEps;
                 existing.airDay = airDay;
                 existing.airTime = airTime;
             } else {
-                allAnimes.push({ id, title, poster, totalEps, airDay, airTime, episodes: [] });
+                allAnimes.push({ id, title, poster, banner, totalEps, airDay, airTime, episodes: [] });
             }
 
             saveToWorker(allAnimes, sliderAnimes, () => {
@@ -320,7 +497,6 @@
             });
         }
 
-        // دالة الرفع المباشر الذكية لمعالجة الأسطر الثلاثة وتوزيع الجودات
         function addEpisodesBulk() {
             const id = document.getElementById('epAnimeId').value.trim();
             const status = document.getElementById('epStatus');
@@ -348,7 +524,6 @@
                 const rawLinksText = block.querySelector('.bulk-links-textarea').value.trim();
 
                 if(epNum && rawLinksText) {
-                    // تقسيم النص لأسطر بناءً على النزول للسطر الجديد
                     const lines = rawLinksText.split('\n').map(line => line.trim()).filter(line => line !== "");
 
                     let l360 = lines[0] || "";
