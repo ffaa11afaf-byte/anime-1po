@@ -15,61 +15,58 @@ export default async function handler(req, res) {
     }
 
     try {
-        // تحويل الرابط تلقائياً إلى النطاق الرئيسي
         let targetUrl = url.replace('stape.me', 'streamtape.com');
 
-        // جلب صفحة الـ Embed بطلب محاكي لمتصفح حقيقي
+        // طلب الصفحة مع محاكاة متصفح هاتف حقيقي لتجاوز الحماية
         const response = await fetch(targetUrl, {
             headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Referer': 'https://streamtape.com/',
-                'Accept-Language': 'en-US,en;q=0.9'
+                'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.5',
+                'Sec-Fetch-Dest': 'document',
+                'Sec-Fetch-Mode': 'navigate',
+                'Sec-Fetch-Site': 'none',
+                'Sec-Fetch-User': '?1',
+                'Upgrade-Insecure-Requests': '1'
             }
         });
 
         const html = await response.text();
 
-        // 1. فك تشفير النمط الأول المباشر (robotlink)
-        let match = html.match(/document\.getElementById\('robotlink'\)\.innerHTML\s*=\s*'([^']+)'\s*\+\s*'([^']+)'/);
+        // فك التشفير عبر البحث عن السلسلة الموزعة داخل الـ DOM
+        const robotMatch = html.match(/document\.getElementById\('robotlink'\)\.innerHTML\s*=\s*'([^']+)'\s*\+\s*'([^']+)'/);
         
-        if (match) {
-            const part1 = match[1];
-            const part2 = match[2].substring(3);
+        if (robotMatch) {
+            const part1 = robotMatch[1];
+            const part2 = robotMatch[2].substring(3);
             const directVideoUrl = `https:${part1}${part2}&stream=1`;
 
             return res.status(200).json({
                 status: 'success',
-                server: 'Streamtape (Pattern 1)',
+                server: 'Streamtape',
                 videoUrl: directVideoUrl
             });
         }
 
-        // 2. فك تشفير النمط الثاني (norobot / videolink الخفي)
-        let altMatch = html.match(/id="robotlink"[^>]*>([^<]+)<\/div>/) || html.match(/&token=([^"&']+)/);
-        let scriptPart = html.match(/innerHTML\s*=\s*['"]([^'"]+)['"]\s*\+\s*['"]([^'"]+)['"]/);
-
-        if (scriptPart) {
-            const p1 = scriptPart[1];
-            const p2 = scriptPart[2].substring(3);
-            const directVideoUrl = `https:${p1}${p2}&stream=1`;
-
-            return res.status(200).json({
+        // محاولة استخراج النمط الاحتياطي
+        const streamLinkMatch = html.match(/id="norobotlink"[^>]*>([^<]+)/);
+        if(streamLinkMatch) {
+             return res.status(200).json({
                 status: 'success',
-                server: 'Streamtape (Pattern 2)',
-                videoUrl: directVideoUrl
+                server: 'Streamtape Alt',
+                videoUrl: `https:${streamLinkMatch[1]}&stream=1`
             });
         }
 
         return res.status(422).json({
             status: 'error',
-            message: 'تعذر العثور على أجزاء الرابط المشفّر في الصفحة. جرب رابط Streamtape آخر للتأكد.',
-            htmlPreview: html.substring(0, 300) // معاينة بسيطة للكود المرجَع
+            message: 'السيرفر حظر الطلب تلقائياً (Bot Protection). يُنصح بتجربة سيرفر Voe.sx أو Doodstream كبديل أكثر استقراراً.'
         });
 
     } catch (error) {
         return res.status(500).json({
             status: 'error',
-            message: 'حدث خطأ في السيرفر الوسيط: ' + error.message
+            message: 'حدث خطأ أثناء فك التشفير: ' + error.message
         });
     }
 }
