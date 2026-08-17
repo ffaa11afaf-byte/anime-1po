@@ -15,7 +15,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SeaStream - الرئيسية</title>
 
-    <!-- أيقونة الموقع الرسمية المفرغة (Favicon) -->
+                <!-- أيقونة الموقع الرسمية المفرغة (Favicon) -->
     <link rel="icon" type="image/png" sizes="32x32" href="https://i.ibb.co/ksB7CMLK/P964379864.png">
     <link rel="icon" type="image/png" sizes="192x192" href="https://i.ibb.co/ksB7CMLK/P964379864.png">
     <link rel="apple-touch-icon" sizes="180x180" href="https://i.ibb.co/ksB7CMLK/P964379864.png">
@@ -55,7 +55,7 @@
         .ad-container { margin: 10px auto; text-align: center; width: 100%; overflow: hidden; }
         .ad-label { color: #666; font-size: 0.75rem; margin: 25px 0 5px 0; text-align: center; letter-spacing: 1px; }
 
-        /* 1. السلايدر العلوي */
+        /* 1. السلايدر العلوي الذكي - واسع ومطابق للتطبيقات الاحترافية */
         .slider-wrapper { position: relative; width: 100%; overflow: hidden; border-radius: 16px; margin-bottom: 25px; background: #16161a; border: 1px solid #2a2a2a; touch-action: pan-y; user-select: none; }
         .slider-container { display: flex; transition: transform 0.4s ease-out; width: 100%; cursor: grab; }
         .slider-container:active { cursor: grabbing; }
@@ -63,8 +63,11 @@
         .slide-img { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.82); pointer-events: none; }
         .slide-overlay { position: absolute; bottom: 0; left: 0; right: 0; padding: 20px 18px 30px 18px; background: linear-gradient(transparent, rgba(0,0,0,0.92)); display: flex; flex-direction: column; align-items: flex-start; pointer-events: none; }
         .slide-title { font-size: 1.25rem; font-weight: bold; color: #fff; text-shadow: 0 2px 6px rgba(0,0,0,0.9); margin-bottom: 8px; direction: ltr; text-align: right; unicode-bidi: plaintext; }
+        
+        /* مربع رقم الحلقة شفاف وأنيق بنفس الألوان البرتقالية */
         .slide-badge { background: rgba(255, 152, 0, 0.15); color: #ff9800; border: 1px solid rgba(255, 152, 0, 0.4); backdrop-filter: blur(4px); padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: bold; }
         
+        /* نقاط السلايدر أسفل الصورة داخل الإطار */
         .slider-dots { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; z-index: 10; }
         .dot { width: 8px; height: 8px; background: rgba(255,255,255,0.3); border-radius: 50%; transition: 0.3s; cursor: pointer; }
         .dot.active { background: #ff9800; width: 22px; border-radius: 10px; }
@@ -80,14 +83,13 @@
         .progress-bar-bg { width: 100%; height: 3px; background: #333; margin-top: 6px; border-radius: 2px; }
         .progress-bar-fill { height: 100%; background: #ff9800; border-radius: 2px; }
 
-        /* 3. شبكات الأنمي */
-        .anime-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); gap: 12px; width: 100%; margin-bottom: 25px; }
+        /* 3. شبكة الأنميات الأساسية */
+        .anime-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); gap: 12px; width: 100%; }
         .anime-card { background: #1a1a1a; border: 1px solid #252525; border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; transition: 0.3s; cursor: pointer; text-decoration: none; position: relative; }
         .anime-card:hover { border-color: #ff9800; transform: translateY(-3px); }
         .poster-box { position: relative; width: 100%; aspect-ratio: 3 / 4.2; background: #111; }
         .anime-poster { width: 100%; height: 100%; object-fit: cover; object-position: top center; }
         .status-tag { position: absolute; top: 6px; right: 6px; background: #28a745; color: #fff; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
-        .jikan-tag { position: absolute; top: 6px; left: 6px; background: #ff9800; color: #000; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
         .ep-tag { position: absolute; bottom: 6px; right: 6px; background: rgba(0,0,0,0.75); color: #fff; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; border: 1px solid #444; }
         .anime-title { font-size: 0.85rem; color: #fff; padding: 8px 5px; text-align: center; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; direction: ltr; text-align: center; unicode-bidi: plaintext; }
 
@@ -105,13 +107,13 @@
             <p>شاهد أحدث الأنميات والحلقات المترجمة بدقة عالية</p>
         </header>
 
-        <!-- شريط البحث -->
+        <!-- شريط البحث ومُنسدل النتائج المباشر -->
         <div class="search-container">
-            <input type="text" id="searchInput" class="search-input" placeholder="بحث بالإنجليزية (مثل One Piece)..." oninput="handleLiveSearch()" onfocus="handleLiveSearch()">
+            <input type="text" id="searchInput" class="search-input" placeholder="بحث..." oninput="handleLiveSearch()" onfocus="handleLiveSearch()">
             <div id="searchDropdown" class="search-dropdown"></div>
         </div>
 
-        <!-- الإعلان العلوي -->
+        <!-- الشريط الإعلاني العلوي -->
         <div class="ad-container">
             <script src="https://pl30586730.effectivecpmnetwork.com/28/04/97/280497d1bc86158457d9ebfaec469991.js"></script>
         </div>
@@ -128,20 +130,17 @@
             <div class="continue-grid" id="continueGrid"></div>
         </div>
 
-        <!-- 🧪 قسم مؤقت للتجربة: Jikan API -->
-        <div class="section-title" style="color: #ff9800;">🧪 تجربة Jikan API (مباشر)</div>
-        <div class="anime-grid" id="jikanTestGrid">
-            <p class="loading-text">جاري الاتصال بـ Jikan API وجلب الأنميات...</p>
-        </div>
+        <!-- 3. قسم الإصدارات الحديثة -->
+        <div class="section-title">الإصدارات الحديثة</div>
 
-        <!-- 3. قسم الإصدارات الحديثة الأساسي -->
-        <div class="section-title">الإصدارات الحديثة (الخاصة بموقعك)</div>
         <div class="anime-grid" id="animeGrid">
             <p class="loading-text">جاري تحميل قائمة الأنميات...</p>
         </div>
 
+        <!-- شريط التنبيه الإعلاني الرمادي البسيط -->
         <div class="ad-label">----------اعلان----------</div>
 
+        <!-- الشريط الإعلاني السفلي الإضافي -->
         <div class="ad-container">
             <script async="async" data-cfasync="false" src="https://unprofessionalginger.com/c677bf44c6f94d1865a3c4c2a11f6675/invoke.js"></script>
             <div id="container-c677bf44c6f94d1865a3c4c2a11f6675"></div>
@@ -163,7 +162,6 @@
         let resumeTimeout;
         let totalSlides = 0;
         let fetchAttempts = 0;
-        let searchTimeout = null;
 
         function decryptData(encryptedStr) {
             try {
@@ -176,36 +174,6 @@
                 console.error("خطأ في فك التشفير:", e);
                 return null;
             }
-        }
-
-        // دالة جديدة جلب أنميات تجريبية من Jikan API فقط للعرض في القسم المؤقت
-        function loadJikanTestData() {
-            const jikanGrid = document.getElementById('jikanTestGrid');
-            fetch('https://api.jikan.moe/v4/top/anime?limit=10')
-            .then(res => res.json())
-            .then(data => {
-                jikanGrid.innerHTML = '';
-                if(data.data && data.data.length > 0) {
-                    data.data.forEach(anime => {
-                        const card = document.createElement('div');
-                        card.className = 'anime-card';
-                        card.innerHTML = `
-                            <div class="poster-box">
-                                <img src="${anime.images.jpg.large_image_url}" alt="${anime.title}" class="anime-poster">
-                                <span class="jikan-tag">Jikan</span>
-                                <span class="status-tag">⭐ ${anime.score || 'N/A'}</span>
-                                <span class="ep-tag">الحلقات: ${anime.episodes || 'مستمر'}</span>
-                            </div>
-                            <div class="anime-title">${anime.title}</div>
-                        `;
-                        jikanGrid.appendChild(card);
-                    });
-                }
-            })
-            .catch(err => {
-                console.error("فشل جلب Jikan:", err);
-                jikanGrid.innerHTML = '<p class="loading-text">تعذر جلب الأنميات من Jikan API حالياً</p>';
-            });
         }
 
         function loadAnimesData() {
@@ -251,9 +219,7 @@
             });
         }
 
-        // تشغيل جلب الأنميات الخاصة بك وكذلك قسم Jikan التجريبي
         loadAnimesData();
-        loadJikanTestData();
 
         function normalizeText(str) {
             if (!str) return "";
@@ -268,10 +234,8 @@
             const rawQuery = searchInput.value.trim();
             const query = normalizeText(rawQuery);
 
-            if (searchTimeout) clearTimeout(searchTimeout);
-
             if (rawQuery === "") {
-                dropdown.innerHTML = '<div class="search-prompt-msg">ابحث بالإسبيلينغ الإنجليزي (مثل One Piece)...</div>';
+                dropdown.innerHTML = '<div class="search-prompt-msg">ما الذي ترغب بالبحث عنه؟</div>';
                 dropdown.style.display = 'block';
                 return;
             }
@@ -284,7 +248,9 @@
 
             dropdown.innerHTML = '';
 
-            if (filtered.length > 0) {
+            if (filtered.length === 0) {
+                dropdown.innerHTML = '<div class="search-empty-msg">سيضاف في الوقت القريب 🚀</div>';
+            } else {
                 filtered.forEach(anime => {
                     const lastEp = (anime.episodes && anime.episodes.length > 0) 
                         ? anime.episodes[anime.episodes.length - 1].ep 
@@ -302,39 +268,9 @@
                     `;
                     dropdown.appendChild(item);
                 });
-                dropdown.style.display = 'block';
-            } else {
-                dropdown.innerHTML = '<div class="search-prompt-msg">جاري البحث في Jikan API...</div>';
-                dropdown.style.display = 'block';
-
-                searchTimeout = setTimeout(() => {
-                    fetch(`https://api.jikan.moe/v4/anime?q=${encodeURIComponent(rawQuery)}&limit=5`)
-                    .then(res => res.json())
-                    .then(data => {
-                        dropdown.innerHTML = '';
-                        if (data.data && data.data.length > 0) {
-                            data.data.forEach(anime => {
-                                const item = document.createElement('div');
-                                item.className = 'search-item';
-                                item.innerHTML = `
-                                    <img src="${anime.images.jpg.image_url}" class="search-item-img" alt="${anime.title}">
-                                    <div class="search-item-info">
-                                        <div class="search-item-title">${anime.title}</div>
-                                        <span class="search-item-badge">⭐ ${anime.score || 'N/A'} (Jikan API)</span>
-                                    </div>
-                                `;
-                                dropdown.appendChild(item);
-                            });
-                        } else {
-                            dropdown.innerHTML = '<div class="search-empty-msg">لم يتم العثور على نتائج. جرب كتابة الاسم بالإنجليزية</div>';
-                        }
-                    })
-                    .catch(err => {
-                        console.error("خطأ Jikan API:", err);
-                        dropdown.innerHTML = '<div class="search-empty-msg">فشل الاتصال بقاعدة البيانات العالمية</div>';
-                    });
-                }, 400);
             }
+
+            dropdown.style.display = 'block';
         }
 
         document.addEventListener('click', function(e) {
@@ -517,7 +453,7 @@
             animeGrid.innerHTML = '';
 
             if (animes.length === 0) {
-                animeGrid.innerHTML = '<p class="loading-text">لا توجد أنميات مضافة حالياً في السيرفر الخاص</p>';
+                animeGrid.innerHTML = '<p class="loading-text">لا توجد أنميات مضافة حالياً</p>';
                 return;
             }
 
