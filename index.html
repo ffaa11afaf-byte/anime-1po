@@ -15,7 +15,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SeaStream - الرئيسية</title>
 
-                <!-- أيقونة الموقع الرسمية المفرغة (Favicon) -->
+    <!-- أيقونة الموقع الرسمية المفرغة (Favicon) -->
     <link rel="icon" type="image/png" sizes="32x32" href="https://i.ibb.co/ksB7CMLK/P964379864.png">
     <link rel="icon" type="image/png" sizes="192x192" href="https://i.ibb.co/ksB7CMLK/P964379864.png">
     <link rel="apple-touch-icon" sizes="180x180" href="https://i.ibb.co/ksB7CMLK/P964379864.png">
@@ -55,7 +55,7 @@
         .ad-container { margin: 10px auto; text-align: center; width: 100%; overflow: hidden; }
         .ad-label { color: #666; font-size: 0.75rem; margin: 25px 0 5px 0; text-align: center; letter-spacing: 1px; }
 
-        /* 1. السلايدر العلوي الذكي - واسع ومطابق للتطبيقات الاحترافية */
+        /* 1. السلايدر العلوي الذكي */
         .slider-wrapper { position: relative; width: 100%; overflow: hidden; border-radius: 16px; margin-bottom: 25px; background: #16161a; border: 1px solid #2a2a2a; touch-action: pan-y; user-select: none; }
         .slider-container { display: flex; transition: transform 0.4s ease-out; width: 100%; cursor: grab; }
         .slider-container:active { cursor: grabbing; }
@@ -63,11 +63,8 @@
         .slide-img { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.82); pointer-events: none; }
         .slide-overlay { position: absolute; bottom: 0; left: 0; right: 0; padding: 20px 18px 30px 18px; background: linear-gradient(transparent, rgba(0,0,0,0.92)); display: flex; flex-direction: column; align-items: flex-start; pointer-events: none; }
         .slide-title { font-size: 1.25rem; font-weight: bold; color: #fff; text-shadow: 0 2px 6px rgba(0,0,0,0.9); margin-bottom: 8px; direction: ltr; text-align: right; unicode-bidi: plaintext; }
-        
-        /* مربع رقم الحلقة شفاف وأنيق بنفس الألوان البرتقالية */
         .slide-badge { background: rgba(255, 152, 0, 0.15); color: #ff9800; border: 1px solid rgba(255, 152, 0, 0.4); backdrop-filter: blur(4px); padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: bold; }
         
-        /* نقاط السلايدر أسفل الصورة داخل الإطار */
         .slider-dots { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; z-index: 10; }
         .dot { width: 8px; height: 8px; background: rgba(255,255,255,0.3); border-radius: 50%; transition: 0.3s; cursor: pointer; }
         .dot.active { background: #ff9800; width: 22px; border-radius: 10px; }
@@ -162,6 +159,7 @@
         let resumeTimeout;
         let totalSlides = 0;
         let fetchAttempts = 0;
+        let searchTimeout = null;
 
         function decryptData(encryptedStr) {
             try {
@@ -228,11 +226,14 @@
                       .replace(/[\-:_,\s]/g, "");
         }
 
+        // البحث المباشر مع دعم Jikan API كـ Fallback
         function handleLiveSearch() {
             const searchInput = document.getElementById('searchInput');
             const dropdown = document.getElementById('searchDropdown');
             const rawQuery = searchInput.value.trim();
             const query = normalizeText(rawQuery);
+
+            if (searchTimeout) clearTimeout(searchTimeout);
 
             if (rawQuery === "") {
                 dropdown.innerHTML = '<div class="search-prompt-msg">ما الذي ترغب بالبحث عنه؟</div>';
@@ -248,9 +249,7 @@
 
             dropdown.innerHTML = '';
 
-            if (filtered.length === 0) {
-                dropdown.innerHTML = '<div class="search-empty-msg">سيضاف في الوقت القريب 🚀</div>';
-            } else {
+            if (filtered.length > 0) {
                 filtered.forEach(anime => {
                     const lastEp = (anime.episodes && anime.episodes.length > 0) 
                         ? anime.episodes[anime.episodes.length - 1].ep 
@@ -268,9 +267,42 @@
                     `;
                     dropdown.appendChild(item);
                 });
-            }
+                dropdown.style.display = 'block';
+            } else {
+                // إذا لم يتم العثور على أنمي في القائمة، يتم جلب البيانات من Jikan API بعد 400ms لتخفيف الطلبات
+                dropdown.innerHTML = '<div class="search-prompt-msg">جاري البحث في قاعدة البيانات العالمية (Jikan)...</div>';
+                dropdown.style.display = 'block';
 
-            dropdown.style.display = 'block';
+                searchTimeout = setTimeout(() => {
+                    fetch(`https://api.jikan.moe/v4/anime?q=${encodeURIComponent(rawQuery)}&sfw&limit=5`)
+                    .then(res => res.json())
+                    .then(data => {
+                        dropdown.innerHTML = '';
+                        if (data.data && data.data.length > 0) {
+                            data.data.forEach(anime => {
+                                const item = document.createElement('a');
+                                // يمكن ربط الصفحة بمعرف MAL أو فتح صفحة العرض
+                                item.href = `episodes.html?mal_id=${anime.mal_id}`;
+                                item.className = 'search-item';
+                                item.innerHTML = `
+                                    <img src="${anime.images.jpg.image_url}" class="search-item-img" alt="${anime.title}">
+                                    <div class="search-item-info">
+                                        <div class="search-item-title">${anime.title}</div>
+                                        <span class="search-item-badge">⭐ ${anime.score || 'N/A'} (Jikan API)</span>
+                                    </div>
+                                `;
+                                dropdown.appendChild(item);
+                            });
+                        } else {
+                            dropdown.innerHTML = '<div class="search-empty-msg">سيضاف في الوقت القريب 🚀</div>';
+                        }
+                    })
+                    .catch(err => {
+                        console.error("خطأ Jikan API:", err);
+                        dropdown.innerHTML = '<div class="search-empty-msg">سيضاف في الوقت القريب 🚀</div>';
+                    });
+                }, 400);
+            }
         }
 
         document.addEventListener('click', function(e) {
