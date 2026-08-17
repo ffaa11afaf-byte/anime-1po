@@ -15,58 +15,47 @@ export default async function handler(req, res) {
     }
 
     try {
-        let targetUrl = url.replace('stape.me', 'streamtape.com');
-
-        // طلب الصفحة مع محاكاة متصفح هاتف حقيقي لتجاوز الحماية
-        const response = await fetch(targetUrl, {
+        // طلب صفحة Voe.sx
+        const response = await fetch(url, {
             headers: {
-                'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36',
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-                'Accept-Language': 'en-US,en;q=0.5',
-                'Sec-Fetch-Dest': 'document',
-                'Sec-Fetch-Mode': 'navigate',
-                'Sec-Fetch-Site': 'none',
-                'Sec-Fetch-User': '?1',
-                'Upgrade-Insecure-Requests': '1'
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+                'Referer': 'https://voe.sx/'
             }
         });
 
         const html = await response.text();
 
-        // فك التشفير عبر البحث عن السلسلة الموزعة داخل الـ DOM
-        const robotMatch = html.match(/document\.getElementById\('robotlink'\)\.innerHTML\s*=\s*'([^']+)'\s*\+\s*'([^']+)'/);
-        
-        if (robotMatch) {
-            const part1 = robotMatch[1];
-            const part2 = robotMatch[2].substring(3);
-            const directVideoUrl = `https:${part1}${part2}&stream=1`;
+        // 1. البحث عن روابط MP4 المباشرة في الصفحة
+        const mp4Match = html.match(/'hls':\s*'([^']+)'/) || html.match(/\['src'\]\s*=\s*'([^']+)'/) || html.match(/https?:\/\/[^\s"'<>]+\.mp4[^\s"'<>]+/);
 
+        if (mp4Match) {
             return res.status(200).json({
                 status: 'success',
-                server: 'Streamtape',
-                videoUrl: directVideoUrl
+                server: 'Voe.sx',
+                videoUrl: mp4Match[1] || mp4Match[0]
             });
         }
 
-        // محاولة استخراج النمط الاحتياطي
-        const streamLinkMatch = html.match(/id="norobotlink"[^>]*>([^<]+)/);
-        if(streamLinkMatch) {
-             return res.status(200).json({
+        // 2. فك شفرة Base64 لنظام Voe الجديد إذا كان الملف مشفراً
+        const b64Match = html.match(/let\s+sources\s*=\s*\{"hls":\s*"([^"]+)"/);
+        if (b64Match) {
+            const decodedUrl = Buffer.from(b64Match[1], 'base64').toString('utf-8');
+            return res.status(200).json({
                 status: 'success',
-                server: 'Streamtape Alt',
-                videoUrl: `https:${streamLinkMatch[1]}&stream=1`
+                server: 'Voe.sx (Decoded)',
+                videoUrl: decodedUrl
             });
         }
 
         return res.status(422).json({
             status: 'error',
-            message: 'السيرفر حظر الطلب تلقائياً (Bot Protection). يُنصح بتجربة سيرفر Voe.sx أو Doodstream كبديل أكثر استقراراً.'
+            message: 'تعذر استخراج الرابط المباشر من Voe.sx'
         });
 
     } catch (error) {
         return res.status(500).json({
             status: 'error',
-            message: 'حدث خطأ أثناء فك التشفير: ' + error.message
+            message: 'حدث خطأ في السيرفر الوسيط: ' + error.message
         });
     }
 }
