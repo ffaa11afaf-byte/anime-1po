@@ -13,7 +13,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>عرض الأنمي والحلقات</title>
-            <!-- أيقونة الموقع الرسمية (Favicon) -->
+    <!-- أيقونة الموقع الرسمية (Favicon) -->
     <link rel="icon" type="image/png" sizes="32x32" href="https://i.ibb.co/ksB7CMLK/P964379864.png">
     <link rel="icon" type="image/png" sizes="192x192" href="https://i.ibb.co/ksB7CMLK/P964379864.png">
     <link rel="apple-touch-icon" sizes="180x180" href="https://i.ibb.co/ksB7CMLK/P964379864.png">
@@ -29,9 +29,12 @@
         
         h1 { font-size: 1.2rem; color: #ff9800; margin: 10px 0; direction: ltr; text-align: center; unicode-bidi: plaintext; }
         
-        .player-box { background: #000; border-radius: 8px; overflow: hidden; margin-bottom: 15px; border: 1px solid #333; }
-        .player-container { position: relative; padding-bottom: 56.25%; height: 0; }
-        .player-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
+        .player-box { background: #000; border-radius: 8px; overflow: hidden; margin-bottom: 15px; border: 1px solid #333; position: relative; }
+        .player-container { position: relative; padding-bottom: 56.25%; height: 0; background: #000; }
+        .player-container iframe, .player-container video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; outline: none; }
+        
+        /* مؤشر التحميل الذكي فوق المشغل */
+        .player-loader { display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); color: #ff9800; font-weight: bold; font-size: 0.95rem; z-index: 10; flex-direction: column; justify-content: center; align-items: center; gap: 10px; }
         
         .download-btn { display: none; background: #28a745; color: white; padding: 12px 25px; border-radius: 30px; font-weight: bold; margin-bottom: 20px; text-decoration: none; width: 90%; max-width: 300px; margin: 0 auto 15px auto; }
         .download-btn:hover { background: #218838; }
@@ -44,7 +47,6 @@
         .quality-btn:hover { background: #444; }
         .quality-btn.active { background: #ff9800; color: #000; font-weight: bold; }
 
-        /* البطاقة المصغرة والمدمجة للعداد والتاريخ */
         .compact-info-card { background: rgba(255, 152, 0, 0.08); border: 1px solid rgba(255, 152, 0, 0.3); border-radius: 10px; padding: 10px 14px; margin: 20px auto; max-width: 500px; text-align: right; font-size: 0.82rem; }
         .info-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; color: #ddd; }
         .info-highlight { color: #ff9800; font-weight: bold; }
@@ -71,7 +73,10 @@
     <h1 id="animeHeaderTitle">جاري التحميل...</h1>
 
     <div class="player-box">
-        <div class="player-container">
+        <div id="playerLoader" class="player-loader">
+            <span>⏳ جاري جلب البث المباشر المباشر بدون إعلانات...</span>
+        </div>
+        <div class="player-container" id="playerWrapper">
             <iframe id="videoPlayer" src="" allowfullscreen scrolling="no"></iframe>
         </div>
     </div>
@@ -81,7 +86,6 @@
     <h3>قائمة الحلقات</h3>
     <div id="episodesList"><p class="loading-text">جاري تحميل الحلقات...</p></div>
 
-    <!-- البطاقة المدمجة الذكية للعداد والمعلومات -->
     <div id="countdownContainer"></div>
 
     <footer>
@@ -92,12 +96,13 @@
         const API_URL = "https://anime-api-proxy.ffaa11afaf.workers.dev";
         const SECRET_PASS = "18001900m";
         const listContainer = document.getElementById('episodesList');
-        const iframe = document.getElementById('videoPlayer');
+        const playerWrapper = document.getElementById('playerWrapper');
+        const playerLoader = document.getElementById('playerLoader');
         const downloadBtn = document.getElementById('dynamicDownloadBtn');
 
         const urlParams = new URLSearchParams(window.location.search);
         const currentAnimeId = urlParams.get('id');
-        const targetEpParam = urlParams.get('ep'); // قراءة رقم الحلقة المحددة من الرابط إن وجدت
+        const targetEpParam = urlParams.get('ep');
 
         const daysArabic = ["الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
         let fetchAttempts = 0;
@@ -115,23 +120,17 @@
             }
         }
 
-        // تحسين دالة الحفظ الذكي لتقدم المشاهدة (تمنع التراجع للحلقات الأقل)
         function saveToWatchHistory(animeId, epNum) {
             try {
                 let history = JSON.parse(localStorage.getItem('animeHistory') || '[]');
                 const existingItem = history.find(item => item.animeId === animeId);
                 
                 let epToSave = parseInt(epNum);
-
-                // إذا كان الأنمي محفوظاً سابقاً برقم حلقة أعلى، نحتفظ بالرقم الأعلى
                 if (existingItem && parseInt(existingItem.epNum) > epToSave) {
                     epToSave = parseInt(existingItem.epNum);
                 }
 
-                // تنظيف السجل القديم لهذا الأنمي
                 history = history.filter(item => item.animeId !== animeId);
-                
-                // إعادة الحفظ في البداية برقم الحلقة المتقدم
                 history.unshift({
                     animeId: animeId,
                     epNum: epToSave,
@@ -146,17 +145,66 @@
             }
         }
 
-        function loadVideo(url, element, epNum) {
-            iframe.src = url;
-            const encoded = btoa(url);
-            downloadBtn.href = `download.html?link=${encoded}`;
-            downloadBtn.style.display = 'block';
-            downloadBtn.innerText = 'تحميل الحلقة (' + element.innerText + ')';
+        // دالة استخراج الرابط المباشر بـ IP الزائر عبر CORS Proxy داخلي
+        async function extractDirectVideo(embedUrl) {
+            try {
+                let targetUrl = embedUrl.trim();
+                if (targetUrl.includes('/v/')) targetUrl = targetUrl.replace('/v/', '/e/');
 
+                const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(targetUrl);
+                const response = await fetch(proxyUrl);
+                const htmlText = await response.text();
+
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(htmlText, 'text/html');
+                const robotLink = doc.getElementById('robotlink');
+
+                if (robotLink && robotLink.innerHTML) {
+                    return 'https:' + robotLink.innerHTML;
+                }
+                return null;
+            } catch (e) {
+                console.error("خطأ استخراج Client-Side:", e);
+                return null;
+            }
+        }
+
+        async function loadVideo(url, element, epNum) {
             document.querySelectorAll('.quality-btn').forEach(btn => btn.classList.remove('active'));
             element.classList.add('active');
 
             if(epNum) saveToWatchHistory(currentAnimeId, epNum);
+
+            // التحقق مما إذا كان السيرفر Streamtape لتفعيل الاستخراج المباشر
+            if (url.includes('stape.me') || url.includes('streamtape')) {
+                playerLoader.style.display = 'flex';
+
+                const directMp4 = await extractDirectVideo(url);
+
+                playerLoader.style.display = 'none';
+
+                if (directMp4) {
+                    // تشغيل الفيديو عبر وسم HTML5 مباشر بدون إعلانات
+                    playerWrapper.innerHTML = `
+                        <video controls autoplay style="width:100%; height:100%;">
+                            <source src="${directMp4}" type="video/mp4">
+                            متصفحك لا يدعم تشغيل الفيديو.
+                        </video>
+                    `;
+                    const encoded = btoa(directMp4);
+                    downloadBtn.href = `download.html?link=${encoded}`;
+                    downloadBtn.style.display = 'block';
+                    downloadBtn.innerText = 'تحميل الحلقة (' + element.innerText + ')';
+                    return;
+                }
+            }
+
+            // العودة التلقائية للـ iframe الأصلي في حال سيرفر آخر أو فشل الاستخراج
+            playerWrapper.innerHTML = `<iframe id="videoPlayer" src="${url}" allowfullscreen scrolling="no"></iframe>`;
+            const encoded = btoa(url);
+            downloadBtn.href = `download.html?link=${encoded}`;
+            downloadBtn.style.display = 'block';
+            downloadBtn.innerText = 'تحميل الحلقة (' + element.innerText + ')';
         }
 
         function loadEpisodesData() {
@@ -223,7 +271,6 @@
                         listContainer.appendChild(epSection);
                     });
 
-                    // التوجيه المباشر والتشغيل التلقائي إذا جاء رقم الحلقة بالرابط (من سجل المشاهدات)
                     if (targetEpParam) {
                         setTimeout(() => {
                             const targetSection = document.querySelector(`.ep-section[data-ep="${targetEpParam}"]`);
@@ -340,7 +387,6 @@
     <!-- إعلانات -->
     <script async="async" data-cfasync="false" src="https://unprofessionalginger.com/c677bf44c6f94d1865a3c4c2a11f6675/invoke.js"></script>
     <script src="https://pl30586282.effectivecpmnetwork.com/91/de/a9/91dea99a2c0107ea84bef42b886dbbae.js"></script>
-    <script src="https://pl30586730.effectivecpmnetwork.com/28/04/97/280497d1bc86158457d9ebfaec469991.js"></script>
 
 </body>
 </html>
