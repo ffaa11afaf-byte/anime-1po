@@ -150,13 +150,18 @@
 
             if(epNum) saveToWatchHistory(currentAnimeId, epNum);
 
-            // استدعاء خادم Railway للاستخراج والتشغيل عبر البروكسي عند استخدام Streamtape
             if (url.includes('stape.me') || url.includes('streamtape')) {
                 playerLoader.style.display = 'flex';
 
                 try {
                     const railwayApi = 'https://seso-production.up.railway.app/extract?url=' + encodeURIComponent(url);
-                    const res = await fetch(railwayApi);
+                    
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 20000); // 20 ثانية كحد أقصى لاستجابة Puppeteer
+
+                    const res = await fetch(railwayApi, { signal: controller.signal });
+                    clearTimeout(timeoutId);
+
                     const data = await res.json();
 
                     playerLoader.style.display = 'none';
@@ -173,10 +178,13 @@
                         downloadBtn.style.display = 'block';
                         downloadBtn.innerText = 'تحميل الحلقة (' + element.innerText + ')';
                         return;
+                    } else {
+                        alert('تنبيه السيرفر: ' + (data.error || 'تعذر استخراج الرابط المباشر'));
                     }
                 } catch (e) {
-                    console.error("خطأ الاتصال بالسيرفر:", e);
                     playerLoader.style.display = 'none';
+                    console.error("تفاصيل خطأ الاتصال:", e);
+                    alert('خطأ في الاتصال بالسيرفر: ' + (e.name === 'AbortError' ? 'انقضت مهلة الانتظار (20 ثانية)' : e.message));
                 }
             }
 
@@ -366,9 +374,6 @@
     </script>
     
     <!-- إعلانات -->
-    <script async="async" data-cfasync="false" src="https://unprofessionalginger.com/c677bf44c6f94d1865a3c4c2a11f6675/invoke.js"></script>
-    <script src="https://pl30586282.effectivecpmnetwork.com/91/de/a9/91dea99a2c0107ea84bef42b886dbbae.js"></script>
-    <script src="https://pl30586730.effectivecpmnetwork.com/28/04/97/280497d1bc86158457d9ebfaec469991.js"></script>
 
 </body>
 </html>
