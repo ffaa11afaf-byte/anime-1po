@@ -40,12 +40,14 @@
         .ep-block-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; padding-bottom: 8px; margin-bottom: 10px; color: #ff9800; font-weight: bold; font-size: 0.9rem; }
         .remove-ep-btn { background: #dc3545; color: #fff; border: none; border-radius: 4px; padding: 2px 8px; font-size: 0.75rem; cursor: pointer; }
 
-        /* نافذة التعديل الشاملة المحسنة */
         .edit-modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 10000; overflow-y: auto; padding: 20px 10px; }
         .edit-modal { background: #1a1a1a; border: 1px solid #ff9800; border-radius: 12px; max-width: 600px; margin: 0 auto; padding: 20px; position: relative; }
         .close-modal-btn { position: absolute; top: 12px; left: 12px; background: #dc3545; color: #fff; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; font-weight: bold; }
         .modal-ep-item { background: #111; border: 1px solid #333; border-radius: 6px; padding: 10px; margin-bottom: 8px; }
         .modal-ep-title { color: #ff9800; font-size: 0.85rem; font-weight: bold; margin-bottom: 6px; display: flex; justify-content: space-between; }
+        
+        .q-input-group { background: #181818; padding: 8px; border-radius: 6px; border: 1px solid #282828; margin-bottom: 6px; }
+        .q-label { font-size: 0.8rem; color: #ff9800; font-weight: bold; margin-bottom: 2px; }
     </style>
 </head>
 <body>
@@ -103,17 +105,20 @@
             <div id="animeStatus" class="status-msg"></div>
         </div>
 
-        <!-- قسم إضافة الحلقات بأسلوب اللصق المجمع -->
+        <!-- قسم إضافة الحلقات التلقائي عبر Streamtape -->
         <div class="card">
-            <h2>🎬 إضافة الحلقات (لصق مجمع للجودات)</h2>
+            <h2>🎬 إضافة ورفع الحلقات (Streamtape Auto-Upload)</h2>
             <label>معرف الأنمي (ID):</label>
             <input type="text" id="epAnimeId" placeholder="مثال: solo">
+
+            <label>اسم المجلد أو معرفه في Streamtape (Folder ID/Name):</label>
+            <input type="text" id="streamtapeFolder" placeholder="مثال: Neko أو معرف المجلد الخاص بـ Streamtape">
 
             <div id="episodesInputsContainer"></div>
 
             <button type="button" class="btn btn-secondary" onclick="addEpisodeBlock()">➕ إضافة حلقة أخرى بالقائمة</button>
 
-            <button class="btn btn-green" onclick="addEpisodesBulk()">🚀 رفع جميع الحلقات المدخلة</button>
+            <button class="btn btn-green" onclick="addEpisodesBulk()">🚀 رفع ومعالجة الحلقات المدخلة</button>
             <div id="epStatus" class="status-msg"></div>
         </div>
 
@@ -167,6 +172,11 @@
         const API_URL = "https://anime-api-proxy.ffaa11afaf.workers.dev";
         const SECRET_PASS = "18001900m";
         const ADMIN_ID = 8649503815;
+
+        // Streamtape API Credentials
+        const STREAMTAPE_LOGIN = "39bfbc119ea5941aa286";
+        const STREAMTAPE_KEY = "6PR8RbXKrMh9w6b";
+
         let allAnimes = [];
         let sliderAnimes = [];
         let epBlockCounter = 0;
@@ -230,13 +240,29 @@
 
             block.innerHTML = `
                 <div class="ep-block-header">
-                    <span>بيانات حلقة</span>
+                    <span>بيانات حلقة (رقم ${epBlockCounter})</span>
                     ${epBlockCounter > 1 ? `<button type="button" class="remove-ep-btn" onclick="removeEpisodeBlock('epBlock_${epBlockCounter}')">إلغاء</button>` : ''}
                 </div>
-                <label>رقم الحلقة:</label>
-                <input type="number" class="bulk-ep-num" value="${epBlockCounter}" placeholder="1">
-                <label>روابط الجودات (الترتيب: 360p ثم 720p ثم 1080p - اكتب / للتجاهل):</label>
-                <textarea class="bulk-links-textarea" placeholder="https://stape.me/e/360p...\n/\nhttps://stape.me/e/1080p..."></textarea>
+                <label>اسم الحلقة/الملف (مثال: neko):</label>
+                <input type="text" class="bulk-ep-name" placeholder="مثال: neko">
+
+                <label>رقم الحلقة (إجباري):</label>
+                <input type="number" class="bulk-ep-num" value="${epBlockCounter}" placeholder="1" required>
+                
+                <div class="q-input-group">
+                    <div class="q-label">جودة 360p:</div>
+                    <input type="text" class="link-360" placeholder="رابط مباشر خارجي (أتركه فارغاً للتجاهل)">
+                </div>
+
+                <div class="q-input-group">
+                    <div class="q-label">جودة 720p:</div>
+                    <input type="text" class="link-720" placeholder="رابط مباشر خارجي (أتركه فارغاً للتجاهل)">
+                </div>
+
+                <div class="q-input-group">
+                    <div class="q-label">جودة 1080p:</div>
+                    <input type="text" class="link-1080" placeholder="رابط مباشر خارجي (أتركه فارغاً للتجاهل)">
+                </div>
             `;
 
             container.appendChild(block);
@@ -313,7 +339,6 @@
             renderAnimeList(filtered);
         }
 
-        /* دالة فتح نافذة التعديل الشاملة للأنمي وحلقاته */
         function openEditModal(animeId) {
             const anime = allAnimes.find(a => a.id === animeId);
             if(!anime) return;
@@ -348,11 +373,9 @@
             }
 
             activeEditAnime.episodes.sort((a,b) => a.ep - b.ep).forEach(ep => {
-                const l360 = ep.servers?.find(s => s.quality === "360p")?.embedUrl || "/";
-                const l720 = ep.servers?.find(s => s.quality === "720p")?.embedUrl || "/";
-                const l1080 = ep.servers?.find(s => s.quality === "1080p")?.embedUrl || "/";
-
-                const rawText = `${l360}\n${l720}\n${l1080}`.trim();
+                const l360 = ep.servers?.find(s => s.quality === "360p")?.embedUrl || "";
+                const l720 = ep.servers?.find(s => s.quality === "720p")?.embedUrl || "";
+                const l1080 = ep.servers?.find(s => s.quality === "1080p")?.embedUrl || "";
 
                 const epItem = document.createElement('div');
                 epItem.className = 'modal-ep-item';
@@ -361,8 +384,12 @@
                         <span>حلقة ${ep.ep}</span>
                         <button type="button" class="remove-ep-btn" onclick="deleteModalEp(${ep.ep})">حذف الحلقة</button>
                     </div>
-                    <label>روابط الجودات (الترتيب: 360p ثم 720p ثم 1080p):</label>
-                    <textarea id="mEpText_${ep.ep}">${rawText}</textarea>
+                    <label>360p Embed:</label>
+                    <input type="text" id="mEp360_${ep.ep}" value="${l360}">
+                    <label>720p Embed:</label>
+                    <input type="text" id="mEp720_${ep.ep}" value="${l720}">
+                    <label>1080p Embed:</label>
+                    <input type="text" id="mEp1080_${ep.ep}" value="${l1080}">
                 `;
                 container.appendChild(epItem);
             });
@@ -374,11 +401,45 @@
             renderModalEpisodes();
         }
 
-        // دالة فحص ما إذا كان السطر متجاهلاً أم رابطاً حقيقياً
         function isValidUrlLine(line) {
             if (!line) return false;
             const clean = line.trim().toLowerCase();
             return clean !== "" && clean !== "/" && clean !== "0" && clean !== "none" && clean !== "-";
+        }
+
+        // دالة الرفع إلى Streamtape مع اسم الملف واختيار المجلد
+        async function uploadToStreamtape(fileUrl, fileName, folderId) {
+            if (!isValidUrlLine(fileUrl)) return null;
+            
+            if (fileUrl.includes("streamtape.com/e/") || fileUrl.includes("stape.me/e/")) {
+                return fileUrl;
+            }
+
+            try {
+                let apiReqUrl = `https://api.streamtape.com/file/ul?login=${STREAMTAPE_LOGIN}&key=${STREAMTAPE_KEY}&url=${encodeURIComponent(fileUrl)}`;
+                
+                if (fileName) {
+                    apiReqUrl += `&name=${encodeURIComponent(fileName)}`;
+                }
+                if (folderId) {
+                    apiReqUrl += `&folder=${encodeURIComponent(folderId)}`;
+                }
+
+                const res = await fetch(apiReqUrl);
+                const data = await res.json();
+
+                if (data.status === 200 && data.result && data.result.id) {
+                    return `https://streamtape.com/e/${data.result.id}`;
+                } else if (data.result && data.result.url) {
+                    return data.result.url;
+                } else {
+                    console.error("خطأ من ستريم تيب:", data);
+                    return null;
+                }
+            } catch (err) {
+                console.error("فشل الاتصال بـ Streamtape API:", err);
+                return null;
+            }
         }
 
         function saveModalChanges() {
@@ -400,20 +461,16 @@
 
             if(activeEditAnime.episodes) {
                 activeEditAnime.episodes.forEach(ep => {
-                    const textEl = document.getElementById(`mEpText_${ep.ep}`);
-                    if(textEl) {
-                        const lines = textEl.value.split('\n').map(l => l.trim());
-                        let l360 = lines[0] || "";
-                        let l720 = lines[1] || "";
-                        let l1080 = lines[2] || "";
+                    const l360 = document.getElementById(`mEp360_${ep.ep}`)?.value.trim() || "";
+                    const l720 = document.getElementById(`mEp720_${ep.ep}`)?.value.trim() || "";
+                    const l1080 = document.getElementById(`mEp1080_${ep.ep}`)?.value.trim() || "";
 
-                        let servers = [];
-                        if(isValidUrlLine(l1080)) servers.push({ quality: "1080p", embedUrl: l1080 });
-                        if(isValidUrlLine(l720)) servers.push({ quality: "720p", embedUrl: l720 });
-                        if(isValidUrlLine(l360)) servers.push({ quality: "360p", embedUrl: l360 });
+                    let servers = [];
+                    if(isValidUrlLine(l1080)) servers.push({ quality: "1080p", embedUrl: l1080 });
+                    if(isValidUrlLine(l720)) servers.push({ quality: "720p", embedUrl: l720 });
+                    if(isValidUrlLine(l360)) servers.push({ quality: "360p", embedUrl: l360 });
 
-                        ep.servers = servers;
-                    }
+                    ep.servers = servers;
                 });
             }
 
@@ -504,8 +561,9 @@
             });
         }
 
-        function addEpisodesBulk() {
+        async function addEpisodesBulk() {
             const id = document.getElementById('epAnimeId').value.trim();
+            const folderId = document.getElementById('streamtapeFolder').value.trim();
             const status = document.getElementById('epStatus');
 
             if(!id) {
@@ -522,47 +580,68 @@
             }
 
             const blocks = document.querySelectorAll('.ep-block');
-            let addedCount = 0;
+            if(blocks.length === 0) return;
 
             if(!anime.episodes) anime.episodes = [];
 
-            blocks.forEach(block => {
-                const epNum = block.querySelector('.bulk-ep-num').value.trim();
-                const rawLinksText = block.querySelector('.bulk-links-textarea').value.trim();
+            status.innerText = "⏳ جاري رفع وروابط الحلقة إلى Streamtape...";
+            status.style.color = "#ff9800";
 
-                if(epNum && rawLinksText) {
-                    const lines = rawLinksText.split('\n').map(line => line.trim());
+            let addedCount = 0;
 
-                    let l360 = lines[0] || "";
-                    let l720 = lines[1] || "";
-                    let l1080 = lines[2] || "";
+            for (let block of blocks) {
+                const epNumVal = block.querySelector('.bulk-ep-num').value.trim();
+                const epNameVal = block.querySelector('.bulk-ep-name').value.trim();
+                if(!epNumVal) continue;
+                
+                const epNum = parseInt(epNumVal);
+                const l360Input = block.querySelector('.link-360').value.trim();
+                const l720Input = block.querySelector('.link-720').value.trim();
+                const l1080Input = block.querySelector('.link-1080').value.trim();
 
-                    let servers = [];
-                    if(isValidUrlLine(l1080)) servers.push({ quality: "1080p", embedUrl: l1080 });
-                    if(isValidUrlLine(l720)) servers.push({ quality: "720p", embedUrl: l720 });
-                    if(isValidUrlLine(l360)) servers.push({ quality: "360p", embedUrl: l360 });
+                let existingEp = anime.episodes.find(e => e.ep === epNum);
+                let currentServers = existingEp ? [...existingEp.servers] : [];
 
-                    if(servers.length > 0) {
-                        anime.episodes = anime.episodes.filter(e => e.ep != epNum);
-                        anime.episodes.push({ ep: parseInt(epNum), servers });
-                        addedCount++;
-                    }
+                const name360 = epNameVal ? `${epNameVal}-${epNum}-360p` : null;
+                const name720 = epNameVal ? `${epNameVal}-${epNum}-720p` : null;
+                const name1080 = epNameVal ? `${epNameVal}-${epNum}-1080p` : null;
+
+                let uploaded360 = await uploadToStreamtape(l360Input, name360, folderId);
+                let uploaded720 = await uploadToStreamtape(l720Input, name720, folderId);
+                let uploaded1080 = await uploadToStreamtape(l1080Input, name1080, folderId);
+
+                if (uploaded1080) {
+                    currentServers = currentServers.filter(s => s.quality !== "1080p");
+                    currentServers.push({ quality: "1080p", embedUrl: uploaded1080 });
                 }
-            });
+                if (uploaded720) {
+                    currentServers = currentServers.filter(s => s.quality !== "720p");
+                    currentServers.push({ quality: "720p", embedUrl: uploaded720 });
+                }
+                if (uploaded360) {
+                    currentServers = currentServers.filter(s => s.quality !== "360p");
+                    currentServers.push({ quality: "360p", embedUrl: uploaded360 });
+                }
+
+                if(currentServers.length > 0) {
+                    anime.episodes = anime.episodes.filter(e => e.ep !== epNum);
+                    anime.episodes.push({ ep: epNum, servers: currentServers });
+                    addedCount++;
+                }
+            }
 
             if(addedCount === 0) {
-                status.innerText = "❌ لم يتم إدخال أي روابط صالحة!";
+                status.innerText = "❌ لم يتم رفع أي روابط صالحة!";
                 status.style.color = "#ff5252";
                 return;
             }
 
-            status.innerText = `⏳ جاري رفع وتشفير ${addedCount} حلقة...`;
-            status.style.color = "#ff9800";
+            status.innerText = `⏳ جاري حفظ وتشفير ${addedCount} حلقة...`;
 
             anime.lastReset = Date.now();
 
             saveToWorker(allAnimes, sliderAnimes, () => {
-                status.innerText = `✅ تم رفع وتشفير ${addedCount} حلقة بنجاح دفعة واحدة!`;
+                status.innerText = `✅ تم رفع ومعالجة ${addedCount} حلقة بنجاح!`;
                 status.style.color = "#28a745";
                 
                 document.getElementById('episodesInputsContainer').innerHTML = '';
