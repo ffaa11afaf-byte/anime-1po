@@ -73,7 +73,7 @@
 
     <div class="player-box">
         <div id="playerLoader" class="player-loader">
-            <span>⏳ جاري تجهيز البث المباشر المباشر بدون إعلانات...</span>
+            <span>انتظر ثوانٍ...</span>
         </div>
         <div class="player-container" id="playerWrapper">
             <iframe id="videoPlayer" src="" allowfullscreen scrolling="no"></iframe>
@@ -114,86 +114,116 @@
                 if(!decryptedText) return null;
                 return JSON.parse(decodeURIComponent(decryptedText));
             } catch (e) {
-                console.error("خطأ التشفير:", e);
                 return null;
             }
         }
 
-        function saveToWatchHistory(animeId, epNum) {
+        // حفظ سجل المشاهدة مع الدقيقة والجودة المحددة للحفاظ على تكتيك الصفحة الرئيسية
+        function saveToWatchHistory(animeId, epNum, currentTime = 0, quality = '') {
             try {
                 let history = JSON.parse(localStorage.getItem('animeHistory') || '[]');
                 const existingItem = history.find(item => item.animeId === animeId);
                 
                 let epToSave = parseInt(epNum);
-                if (existingItem && parseInt(existingItem.epNum) > epToSave) {
-                    epToSave = parseInt(existingItem.epNum);
+                let savedTime = currentTime;
+                let savedQuality = quality;
+
+                if (existingItem) {
+                    // إذا كان السجل محفوظاً لحلقة سابقة أعظم، نحافظ على رقم الحلقة والتفاصيل
+                    if (parseInt(existingItem.epNum) > epToSave) {
+                        epToSave = parseInt(existingItem.epNum);
+                        savedTime = existingItem.currentTime || 0;
+                        savedQuality = existingItem.quality || quality;
+                    } else if (parseInt(existingItem.epNum) === epToSave) {
+                        // تحديث الدقيقة والجودة لنفس الحلقة الحالية
+                        if (!savedQuality) savedQuality = existingItem.quality || '';
+                    }
                 }
 
                 history = history.filter(item => item.animeId !== animeId);
                 history.unshift({
                     animeId: animeId,
                     epNum: epToSave,
+                    currentTime: savedTime,
+                    quality: savedQuality,
                     progress: 100,
                     timestamp: Date.now()
                 });
 
                 if(history.length > 5) history = history.slice(0, 5);
                 localStorage.setItem('animeHistory', JSON.stringify(history));
-            } catch(e) {
-                console.error("خطأ حفظ السجل:", e);
-            }
+            } catch(e) {}
         }
 
-        async function loadVideo(url, element, epNum) {
+        function getSavedEpData(animeId, epNum) {
+            try {
+                const history = JSON.parse(localStorage.getItem('animeHistory') || '[]');
+                return history.find(item => item.animeId === animeId && parseInt(item.epNum) === parseInt(epNum));
+            } catch(e) { return null; }
+        }
+
+        async function loadVideo(url, element, epNum, resumeTime = 0) {
             document.querySelectorAll('.quality-btn').forEach(btn => btn.classList.remove('active'));
             element.classList.add('active');
 
-            if(epNum) saveToWatchHistory(currentAnimeId, epNum);
+            const qualityText = element.innerText.trim();
+            saveToWatchHistory(currentAnimeId, epNum, resumeTime, qualityText);
 
             if (url.includes('stape.me') || url.includes('streamtape')) {
                 playerLoader.style.display = 'flex';
 
                 try {
                     const railwayApi = 'https://seso-production.up.railway.app/extract?url=' + encodeURIComponent(url);
-                    
                     const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 20000); // 20 ثانية كحد أقصى لاستجابة Puppeteer
+                    const timeoutId = setTimeout(() => controller.abort(), 20000);
 
                     const res = await fetch(railwayApi, { signal: controller.signal });
                     clearTimeout(timeoutId);
 
                     const data = await res.json();
-
                     playerLoader.style.display = 'none';
 
                     if (data.success && data.directLink) {
                         playerWrapper.innerHTML = `
-                            <video controls autoplay style="width:100%; height:100%;">
+                            <video id="mainVideoPlayer" controls autoplay style="width:100%; height:100%;">
                                 <source src="${data.directLink}" type="video/mp4">
                                 متصفحك لا يدعم تشغيل الفيديو.
                             </video>
                         `;
+
+                        const videoEl = document.getElementById('mainVideoPlayer');
+                        
+                        // التوجه للدقيقة المحددة تلقائياً
+                        if (resumeTime > 0) {
+                            videoEl.addEventListener('loadedmetadata', () => {
+                                videoEl.currentTime = resumeTime;
+                            }, { once: true });
+                        }
+
+                        // الاستماع لتغيير الوقت وحفظ الدقيقة الحالية باستمرار
+                        videoEl.addEventListener('timeupdate', () => {
+                            if (videoEl.currentTime > 0) {
+                                saveToWatchHistory(currentAnimeId, epNum, Math.floor(videoEl.currentTime), qualityText);
+                            }
+                        });
+
                         const encoded = btoa(data.directLink);
                         downloadBtn.href = `download.html?link=${encoded}`;
                         downloadBtn.style.display = 'block';
-                        downloadBtn.innerText = 'تحميل الحلقة (' + element.innerText + ')';
+                        downloadBtn.innerText = 'تحميل الحلقة (' + qualityText + ')';
                         return;
-                    } else {
-                        alert('تنبيه السيرفر: ' + (data.error || 'تعذر استخراج الرابط المباشر'));
                     }
                 } catch (e) {
                     playerLoader.style.display = 'none';
-                    console.error("تفاصيل خطأ الاتصال:", e);
-                    alert('خطأ في الاتصال بالسيرفر: ' + (e.name === 'AbortError' ? 'انقضت مهلة الانتظار (20 ثانية)' : e.message));
                 }
             }
 
-            // العودة التلقائية للـ iframe الاصلي مع السيرفرات الأخرى أو عند التعثر
+            // العودة التلقائية بدون ظهور أي تنبيهات للمشاهد
             playerWrapper.innerHTML = `<iframe id="videoPlayer" src="${url}" allowfullscreen scrolling="no"></iframe>`;
             const encoded = btoa(url);
             downloadBtn.href = `download.html?link=${encoded}`;
             downloadBtn.style.display = 'block';
-            downloadBtn.innerText = 'تحميل الحلقة (' + element.innerText + ')';
+            downloadBtn.innerText = 'تحميل الحلقة (' + qualityText + ')';
         }
 
         function loadEpisodesData() {
@@ -201,7 +231,7 @@
 
             fetch(fetchUrl)
             .then(response => {
-                if (!response.ok) throw new Error("خطأ اتصال");
+                if (!response.ok) throw new Error();
                 return response.json();
             })
             .then(data => {
@@ -260,13 +290,32 @@
                         listContainer.appendChild(epSection);
                     });
 
+                    // التوجه التلقائي وتحديد الجودة والدقيقة المحفوظة عند فتح الحلقة من سجل المشاهدات
                     if (targetEpParam) {
                         setTimeout(() => {
                             const targetSection = document.querySelector(`.ep-section[data-ep="${targetEpParam}"]`);
                             if (targetSection) {
                                 targetSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                const targetBtn = targetSection.querySelector('.quality-btn');
-                                if (targetBtn) targetBtn.click();
+                                
+                                const savedData = getSavedEpData(currentAnimeId, targetEpParam);
+                                let targetBtn = null;
+
+                                if (savedData && savedData.quality) {
+                                    const btns = Array.from(targetSection.querySelectorAll('.quality-btn'));
+                                    targetBtn = btns.find(b => b.innerText.trim() === savedData.quality.trim());
+                                }
+                                
+                                if (!targetBtn) targetBtn = targetSection.querySelector('.quality-btn');
+
+                                if (targetBtn) {
+                                    const timeToResume = (savedData && savedData.currentTime) ? savedData.currentTime : 0;
+                                    targetBtn.click();
+                                    // إعادة توجيه الوقت إن وُجد
+                                    const serverObj = anime.episodes.find(e => parseInt(e.ep) === parseInt(targetEpParam));
+                                    if (serverObj && serverObj.servers.length > 0) {
+                                        loadVideo(serverObj.servers[0].embedUrl, targetBtn, targetEpParam, timeToResume);
+                                    }
+                                }
                             }
                         }, 400);
                     }
@@ -275,7 +324,6 @@
                 setupSmartCountdown(anime, currentEpCount);
             })
             .catch(err => {
-                console.error(err);
                 fetchAttempts++;
                 if (fetchAttempts <= 3) {
                     setTimeout(loadEpisodesData, 1500);
