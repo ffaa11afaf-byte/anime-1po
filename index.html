@@ -15,7 +15,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SeaStream - الرئيسية</title>
 
-                <!-- أيقونة الموقع الرسمية المفرغة (Favicon) -->
+    <!-- أيقونة الموقع الرسمية المفرغة (Favicon) -->
     <link rel="icon" type="image/png" sizes="32x32" href="https://i.ibb.co/ksB7CMLK/P964379864.png">
     <link rel="icon" type="image/png" sizes="192x192" href="https://i.ibb.co/ksB7CMLK/P964379864.png">
     <link rel="apple-touch-icon" sizes="180x180" href="https://i.ibb.co/ksB7CMLK/P964379864.png">
@@ -33,12 +33,10 @@
         .container { max-width: 1000px; margin: 0 auto; width: 100%; text-align: right; }
         .section-title { font-size: 1.1rem; color: #fff; margin: 20px 0 10px 0; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
 
-        /* شريط البحث الذكي والنتائج المنبثقة */
         .search-container { position: relative; width: 100%; margin: 10px 0 20px 0; z-index: 100; }
         .search-input { width: 100%; padding: 12px 15px; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 8px; color: #fff; font-size: 0.9rem; transition: 0.3s; outline: none; text-align: right; }
         .search-input:focus { border-color: #ff9800; box-shadow: 0 0 8px rgba(255, 152, 0, 0.2); }
 
-        /* قائمة نتائج البحث المنسدلة المباشرة */
         .search-dropdown { display: none; position: absolute; top: calc(100% + 5px); left: 0; right: 0; background: #18181c; border: 1px solid #333; border-radius: 8px; max-height: 320px; overflow-y: auto; box-shadow: 0 8px 25px rgba(0,0,0,0.8); z-index: 999; }
         .search-item { display: flex; align-items: center; gap: 12px; padding: 10px; border-bottom: 1px solid #222; transition: 0.2s; cursor: pointer; text-decoration: none; }
         .search-item:last-child { border-bottom: none; }
@@ -51,11 +49,9 @@
         .search-empty-msg { padding: 18px; text-align: center; color: #ff9800; font-size: 0.88rem; font-weight: bold; }
         .search-prompt-msg { padding: 18px; text-align: center; color: #888; font-size: 0.85rem; }
 
-        /* الإعلانات العلوية والسفلية وشريط التنبيه */
         .ad-container { margin: 10px auto; text-align: center; width: 100%; overflow: hidden; }
         .ad-label { color: #666; font-size: 0.75rem; margin: 25px 0 5px 0; text-align: center; letter-spacing: 1px; }
 
-        /* 1. السلايدر العلوي الذكي - واسع ومطابق للتطبيقات الاحترافية */
         .slider-wrapper { position: relative; width: 100%; overflow: hidden; border-radius: 16px; margin-bottom: 25px; background: #16161a; border: 1px solid #2a2a2a; touch-action: pan-y; user-select: none; }
         .slider-container { display: flex; transition: transform 0.4s ease-out; width: 100%; cursor: grab; }
         .slider-container:active { cursor: grabbing; }
@@ -63,16 +59,12 @@
         .slide-img { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.82); pointer-events: none; }
         .slide-overlay { position: absolute; bottom: 0; left: 0; right: 0; padding: 20px 18px 30px 18px; background: linear-gradient(transparent, rgba(0,0,0,0.92)); display: flex; flex-direction: column; align-items: flex-start; pointer-events: none; }
         .slide-title { font-size: 1.25rem; font-weight: bold; color: #fff; text-shadow: 0 2px 6px rgba(0,0,0,0.9); margin-bottom: 8px; direction: ltr; text-align: right; unicode-bidi: plaintext; }
-        
-        /* مربع رقم الحلقة شفاف وأنيق بنفس الألوان البرتقالية */
         .slide-badge { background: rgba(255, 152, 0, 0.15); color: #ff9800; border: 1px solid rgba(255, 152, 0, 0.4); backdrop-filter: blur(4px); padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: bold; }
         
-        /* نقاط السلايدر أسفل الصورة داخل الإطار */
         .slider-dots { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; z-index: 10; }
         .dot { width: 8px; height: 8px; background: rgba(255,255,255,0.3); border-radius: 50%; transition: 0.3s; cursor: pointer; }
         .dot.active { background: #ff9800; width: 22px; border-radius: 10px; }
 
-        /* 2. شريط آخر المشاهدات */
         .continue-section { display: none; margin-bottom: 25px; }
         .continue-grid { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 8px; scrollbar-width: none; }
         .continue-card { min-width: 160px; max-width: 160px; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 8px; overflow: hidden; position: relative; flex-shrink: 0; }
@@ -83,7 +75,6 @@
         .progress-bar-bg { width: 100%; height: 3px; background: #333; margin-top: 6px; border-radius: 2px; }
         .progress-bar-fill { height: 100%; background: #ff9800; border-radius: 2px; }
 
-        /* 3. شبكة الأنميات الأساسية */
         .anime-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); gap: 12px; width: 100%; }
         .anime-card { background: #1a1a1a; border: 1px solid #252525; border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; transition: 0.3s; cursor: pointer; text-decoration: none; position: relative; }
         .anime-card:hover { border-color: #ff9800; transform: translateY(-3px); }
@@ -107,40 +98,33 @@
             <p>شاهد أحدث الأنميات والحلقات المترجمة بدقة عالية</p>
         </header>
 
-        <!-- شريط البحث ومُنسدل النتائج المباشر -->
         <div class="search-container">
             <input type="text" id="searchInput" class="search-input" placeholder="بحث..." oninput="handleLiveSearch()" onfocus="handleLiveSearch()">
             <div id="searchDropdown" class="search-dropdown"></div>
         </div>
 
-        <!-- الشريط الإعلاني العلوي -->
         <div class="ad-container">
             <script src="https://pl30586730.effectivecpmnetwork.com/28/04/97/280497d1bc86158457d9ebfaec469991.js"></script>
         </div>
 
-        <!-- 1. السلايدر العلوي -->
         <div class="slider-wrapper" id="sliderWrapper" style="display: none;">
             <div class="slider-container" id="sliderContainer"></div>
             <div class="slider-dots" id="sliderDots"></div>
         </div>
 
-        <!-- 2. قسم آخر المشاهدات -->
         <div class="continue-section" id="continueSection">
             <div class="section-title">آخر المشاهدات</div>
             <div class="continue-grid" id="continueGrid"></div>
         </div>
 
-        <!-- 3. قسم الإصدارات الحديثة -->
         <div class="section-title">الإصدارات الحديثة</div>
 
         <div class="anime-grid" id="animeGrid">
             <p class="loading-text">جاري تحميل قائمة الأنميات...</p>
         </div>
 
-        <!-- شريط التنبيه الإعلاني الرمادي البسيط -->
         <div class="ad-label">----------اعلان----------</div>
 
-        <!-- الشريط الإعلاني السفلي الإضافي -->
         <div class="ad-container">
             <script async="async" data-cfasync="false" src="https://unprofessionalginger.com/c677bf44c6f94d1865a3c4c2a11f6675/invoke.js"></script>
             <div id="container-c677bf44c6f94d1865a3c4c2a11f6675"></div>
@@ -171,7 +155,6 @@
                 if(!decryptedText) return null;
                 return JSON.parse(decodeURIComponent(decryptedText));
             } catch (e) {
-                console.error("خطأ في فك التشفير:", e);
                 return null;
             }
         }
@@ -209,7 +192,7 @@
                 renderAnimeGrid(allAnimesList);
             })
             .catch(err => {
-                console.error("خطأ في جلب البيانات:", err);
+                console.error("خطأ جلب البيانات:", err);
                 fetchAttempts++;
                 if (fetchAttempts <= 3) {
                     setTimeout(loadAnimesData, 1500);
@@ -223,9 +206,7 @@
 
         function normalizeText(str) {
             if (!str) return "";
-            return str.toString()
-                      .toLowerCase()
-                      .replace(/[\-:_,\s]/g, "");
+            return str.toString().toLowerCase().replace(/[\-:_,\s]/g, "");
         }
 
         function handleLiveSearch() {
@@ -329,7 +310,6 @@
             });
 
             sliderWrapper.style.display = 'block';
-
             enableTouchAndDrag(sliderWrapper);
             startAutoSlide();
         }
@@ -397,7 +377,6 @@
                         currentSlide = (currentSlide - 1 + totalSlides) % totalSlides;
                     }
                 }
-                
                 pauseAndGoToSlide(currentSlide);
             };
 
@@ -411,6 +390,7 @@
             wrapper.addEventListener('mouseleave', handleEnd);
         }
 
+        // إعداد قسم آخر المشاهدات بحساب نسبة التقدم الدقيقة بناءً على الثواني المخزنة
         function setupContinueWatching(animes) {
             const continueSection = document.getElementById('continueSection');
             const continueGrid = document.getElementById('continueGrid');
@@ -425,7 +405,14 @@
                 const anime = animes.find(a => a.id === item.animeId);
                 if(anime && count < 5) {
                     count++;
-                    const percent = item.progress || 100;
+                    
+                    // حساب نسبة التقدم (افتراض طول الحلقة 24 دقيقة = 1440 ثانية إذا لم تكن مكتملة)
+                    let percent = 100;
+                    if (item.currentTime && item.currentTime > 0) {
+                        percent = Math.min(Math.round((item.currentTime / 1440) * 100), 100);
+                        if (percent < 5) percent = 5; // حد أدنى لشكل شريط التقدم
+                    }
+
                     const card = document.createElement('a');
                     card.href = `episodes.html?id=${anime.id}&ep=${item.epNum}`;
                     card.className = 'continue-card';
