@@ -65,7 +65,7 @@
     <div id="app" class="container">
         <h1>🛠️ لوحة تحكم الأنميات</h1>
 
-        <!-- قسم تخصيص أنميات السلايدر العلوي -->
+        <!-- قسم السلايدر العلوي -->
         <div class="card">
             <h2>🎠 تحديد أنميات السلايدر العلوي (9 أنميات كحد أقصى)</h2>
             <label>معرفات الأنميات (IDs) مفصولة بفارزة ( , ):</label>
@@ -105,24 +105,23 @@
             <div id="animeStatus" class="status-msg"></div>
         </div>
 
-        <!-- قسم إضافة الحلقات التلقائي عبر Streamtape -->
+        <!-- قسم إضافة ورفع الحلقات -->
         <div class="card">
-            <h2>🎬 إضافة ورفع الحلقات (Streamtape Auto-Upload)</h2>
+            <h2>🎬 إضافة ورفع الحلقات (Auto-Upload)</h2>
             <label>معرف الأنمي (ID):</label>
             <input type="text" id="epAnimeId" placeholder="مثال: solo">
 
-            <label>اسم المجلد أو معرفه في Streamtape (Folder ID/Name):</label>
-            <input type="text" id="streamtapeFolder" placeholder="مثال: Neko أو معرف المجلد الخاص بـ Streamtape">
+            <label>معرف المجلد في Streamtape (Folder ID - اختياري):</label>
+            <input type="text" id="streamtapeFolder" placeholder="مثال: f_abc123 (أتركه فارغاً للرئيسي)">
 
             <div id="episodesInputsContainer"></div>
 
             <button type="button" class="btn btn-secondary" onclick="addEpisodeBlock()">➕ إضافة حلقة أخرى بالقائمة</button>
-
             <button class="btn btn-green" onclick="addEpisodesBulk()">🚀 رفع ومعالجة الحلقات المدخلة</button>
             <div id="epStatus" class="status-msg"></div>
         </div>
 
-        <!-- قسم قائمة الأنميات وإدارتها التفاعلية -->
+        <!-- قسم قائمة الأنميات -->
         <div class="card">
             <h2>قائمة الأنميات المضافة (انقر للتعديل الشامل)</h2>
             <input type="text" id="searchBox" class="search-box" placeholder="بحث عن أنمي..." oninput="filterAnimes()">
@@ -130,7 +129,7 @@
         </div>
     </div>
 
-    <!-- نافذة تعديل الأنمي والحلقات الشاملة (Modal) -->
+    <!-- نافذة تعديل الأنمي والحلقات (Modal) -->
     <div id="editModalOverlay" class="edit-modal-overlay">
         <div class="edit-modal">
             <button class="close-modal-btn" onclick="closeEditModal()">✕</button>
@@ -173,7 +172,6 @@
         const SECRET_PASS = "18001900m";
         const ADMIN_ID = 8649503815;
 
-        // Streamtape API Credentials
         const STREAMTAPE_LOGIN = "39bfbc119ea5941aa286";
         const STREAMTAPE_KEY = "6PR8RbXKrMh9w6b";
 
@@ -243,8 +241,8 @@
                     <span>بيانات حلقة (رقم ${epBlockCounter})</span>
                     ${epBlockCounter > 1 ? `<button type="button" class="remove-ep-btn" onclick="removeEpisodeBlock('epBlock_${epBlockCounter}')">إلغاء</button>` : ''}
                 </div>
-                <label>اسم الحلقة/الملف (مثال: neko):</label>
-                <input type="text" class="bulk-ep-name" placeholder="مثال: neko">
+                <label>اسم الحلقة/الملف (مثال: subee):</label>
+                <input type="text" class="bulk-ep-name" placeholder="مثال: subee">
 
                 <label>رقم الحلقة (إجباري):</label>
                 <input type="number" class="bulk-ep-num" value="${epBlockCounter}" placeholder="1" required>
@@ -404,10 +402,9 @@
         function isValidUrlLine(line) {
             if (!line) return false;
             const clean = line.trim().toLowerCase();
-            return clean !== "" && clean !== "/" && clean !== "0" && clean !== "none" && clean !== "-";
+            return clean.startsWith("http://") || clean.startsWith("https://");
         }
 
-        // دالة الرفع إلى Streamtape مع اسم الملف واختيار المجلد
         async function uploadToStreamtape(fileUrl, fileName, folderId) {
             if (!isValidUrlLine(fileUrl)) return null;
             
@@ -416,28 +413,21 @@
             }
 
             try {
-                let apiReqUrl = `https://api.streamtape.com/file/ul?login=${STREAMTAPE_LOGIN}&key=${STREAMTAPE_KEY}&url=${encodeURIComponent(fileUrl)}`;
-                
-                if (fileName) {
-                    apiReqUrl += `&name=${encodeURIComponent(fileName)}`;
-                }
-                if (folderId) {
-                    apiReqUrl += `&folder=${encodeURIComponent(folderId)}`;
-                }
+                let stTarget = `https://api.streamtape.com/file/ul?login=${STREAMTAPE_LOGIN}&key=${STREAMTAPE_KEY}&url=${encodeURIComponent(fileUrl)}`;
+                if (fileName) stTarget += `&name=${encodeURIComponent(fileName)}`;
+                if (folderId) stTarget += `&folder=${encodeURIComponent(folderId)}`;
 
-                const res = await fetch(apiReqUrl);
+                const res = await fetch(API_URL + "?proxyUrl=" + encodeURIComponent(stTarget));
                 const data = await res.json();
 
                 if (data.status === 200 && data.result && data.result.id) {
                     return `https://streamtape.com/e/${data.result.id}`;
                 } else if (data.result && data.result.url) {
                     return data.result.url;
-                } else {
-                    console.error("خطأ من ستريم تيب:", data);
-                    return null;
                 }
+                return null;
             } catch (err) {
-                console.error("فشل الاتصال بـ Streamtape API:", err);
+                console.error("فشل الرفع عبر البروكسي:", err);
                 return null;
             }
         }
@@ -589,7 +579,7 @@
 
             let addedCount = 0;
 
-            for (let block of blocks) {
+            for (let block of Array.from(blocks)) {
                 const epNumVal = block.querySelector('.bulk-ep-num').value.trim();
                 const epNameVal = block.querySelector('.bulk-ep-name').value.trim();
                 if(!epNumVal) continue;
@@ -636,7 +626,7 @@
                 return;
             }
 
-            status.innerText = `⏳ جاري حفظ وتشفير ${addedCount} حلقة...`;
+            status.innerText = `⏳ جاري حفظ وتشفير ${addedCount} حلقة في قاعدة البيانات...`;
 
             anime.lastReset = Date.now();
 
