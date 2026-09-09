@@ -405,7 +405,7 @@
             return clean.startsWith("http://") || clean.startsWith("https://");
         }
 
-        // دالة الرفع عبر Streamtape Remote Upload الصحيحة
+        // دالة الرفع عبر Streamtape Remote Upload المحدثة والمصصحة (انتظار ExtId)
         async function uploadToStreamtape(fileUrl, fileName, folderId) {
             if (!isValidUrlLine(fileUrl)) return null;
             
@@ -414,6 +414,7 @@
             }
 
             try {
+                // 1. طلب إضافة الرابط للرفع
                 let stTarget = `https://api.streamtape.com/remotedl/add?login=${STREAMTAPE_LOGIN}&key=${STREAMTAPE_KEY}&url=${encodeURIComponent(fileUrl)}`;
                 if (fileName) stTarget += `&name=${encodeURIComponent(fileName)}`;
                 if (folderId) stTarget += `&folder=${encodeURIComponent(folderId)}`;
@@ -421,8 +422,34 @@
                 const res = await fetch(API_URL + "?proxyUrl=" + encodeURIComponent(stTarget));
                 const data = await res.json();
 
+                // 2. التحقق من نجاح طلب الرفع وأخذ معرف المهمة (Task ID)
                 if (data.status === 200 && data.result && data.result.id) {
-                    return `https://stape.me/e/${data.result.id}`;
+                    const taskId = data.result.id;
+                    let finalEmbedUrl = "";
+                    let attempts = 0;
+
+                    // 3. فحص حالة الرفع كل 5 ثوانٍ لاستخراج الـ extid الحقيقي
+                    while (attempts < 15) { // الحد الأقصى للانتظار 75 ثانية
+                        await new Promise(r => setTimeout(r, 5000));
+                        attempts++;
+
+                        let statusTarget = `https://api.streamtape.com/remotedl/status?login=${STREAMTAPE_LOGIN}&key=${STREAMTAPE_KEY}&id=${taskId}`;
+                        const statusRes = await fetch(API_URL + "?proxyUrl=" + encodeURIComponent(statusTarget));
+                        const statusData = await statusRes.json();
+
+                        if (statusData.status === 200 && statusData.result && statusData.result[taskId]) {
+                            const taskInfo = statusData.result[taskId];
+                            
+                            // إذا ظهر معرف الملف الحقيقي (extid) نأخذه ونوقف الفحص
+                            if (taskInfo.extid) {
+                                finalEmbedUrl = `https://stape.me/e/${taskInfo.extid}`;
+                                return finalEmbedUrl;
+                            } else if (taskInfo.status === "error" || taskInfo.status === "failed") {
+                                console.error("فشل الرفع من المصدر (ربما الرابط محمي)");
+                                return null;
+                            }
+                        }
+                    }
                 }
                 return null;
             } catch (err) {
