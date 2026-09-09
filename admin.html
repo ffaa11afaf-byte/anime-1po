@@ -65,7 +65,6 @@
     <div id="app" class="container">
         <h1>🛠️ لوحة تحكم الأنميات</h1>
 
-        <!-- قسم السلايدر العلوي -->
         <div class="card">
             <h2>🎠 تحديد أنميات السلايدر العلوي (9 أنميات كحد أقصى)</h2>
             <label>معرفات الأنميات (IDs) مفصولة بفارزة ( , ):</label>
@@ -75,7 +74,6 @@
             <div id="sliderStatus" class="status-msg"></div>
         </div>
 
-        <!-- قسم إضافة أنمي جديد -->
         <div class="card">
             <h2>إضافة أنمي جديد</h2>
             <label>معرف الأنمي (ID):</label>
@@ -105,7 +103,6 @@
             <div id="animeStatus" class="status-msg"></div>
         </div>
 
-        <!-- قسم إضافة ورفع الحلقات -->
         <div class="card">
             <h2>🎬 إضافة ورفع الحلقات (Streamtape Remote Upload)</h2>
             <label>معرف الأنمي (ID):</label>
@@ -121,7 +118,6 @@
             <div id="epStatus" class="status-msg"></div>
         </div>
 
-        <!-- قسم قائمة الأنميات -->
         <div class="card">
             <h2>قائمة الأنميات المضافة (انقر للتعديل الشامل)</h2>
             <input type="text" id="searchBox" class="search-box" placeholder="بحث عن أنمي..." oninput="filterAnimes()">
@@ -129,7 +125,6 @@
         </div>
     </div>
 
-    <!-- نافذة تعديل الأنمي والحلقات (Modal) -->
     <div id="editModalOverlay" class="edit-modal-overlay">
         <div class="edit-modal">
             <button class="close-modal-btn" onclick="closeEditModal()">✕</button>
@@ -405,7 +400,6 @@
             return clean.startsWith("http://") || clean.startsWith("https://");
         }
 
-        // دالة الرفع عبر Streamtape Remote Upload المحدثة والمصصحة (انتظار ExtId)
         async function uploadToStreamtape(fileUrl, fileName, folderId) {
             if (!isValidUrlLine(fileUrl)) return null;
             
@@ -414,7 +408,6 @@
             }
 
             try {
-                // 1. طلب إضافة الرابط للرفع
                 let stTarget = `https://api.streamtape.com/remotedl/add?login=${STREAMTAPE_LOGIN}&key=${STREAMTAPE_KEY}&url=${encodeURIComponent(fileUrl)}`;
                 if (fileName) stTarget += `&name=${encodeURIComponent(fileName)}`;
                 if (folderId) stTarget += `&folder=${encodeURIComponent(folderId)}`;
@@ -422,14 +415,12 @@
                 const res = await fetch(API_URL + "?proxyUrl=" + encodeURIComponent(stTarget));
                 const data = await res.json();
 
-                // 2. التحقق من نجاح طلب الرفع وأخذ معرف المهمة (Task ID)
                 if (data.status === 200 && data.result && data.result.id) {
                     const taskId = data.result.id;
-                    let finalEmbedUrl = "";
                     let attempts = 0;
 
-                    // 3. فحص حالة الرفع كل 5 ثوانٍ لاستخراج الـ extid الحقيقي
-                    while (attempts < 15) { // الحد الأقصى للانتظار 75 ثانية
+                    // انتظار حتى 5 دقائق لضمان معالجة Streamtape 
+                    while (attempts < 60) { 
                         await new Promise(r => setTimeout(r, 5000));
                         attempts++;
 
@@ -440,12 +431,13 @@
                         if (statusData.status === 200 && statusData.result && statusData.result[taskId]) {
                             const taskInfo = statusData.result[taskId];
                             
-                            // إذا ظهر معرف الملف الحقيقي (extid) نأخذه ونوقف الفحص
-                            if (taskInfo.extid) {
-                                finalEmbedUrl = `https://stape.me/e/${taskInfo.extid}`;
-                                return finalEmbedUrl;
+                            // لا يسحب الرابط الا إذا انتهى الرفع كلياً لتفادي Not Found
+                            if (taskInfo.status === "finished" || taskInfo.status === "completed") {
+                                if (taskInfo.extid) {
+                                    return `https://stape.me/e/${taskInfo.extid}`;
+                                }
                             } else if (taskInfo.status === "error" || taskInfo.status === "failed") {
-                                console.error("فشل الرفع من المصدر (ربما الرابط محمي)");
+                                console.error("فشل الرفع من المصدر");
                                 return null;
                             }
                         }
@@ -453,7 +445,7 @@
                 }
                 return null;
             } catch (err) {
-                console.error("فشل الرفع عبر البروكسي:", err);
+                console.error("فشل الرفع:", err);
                 return null;
             }
         }
