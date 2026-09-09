@@ -107,12 +107,12 @@
 
         <!-- قسم إضافة ورفع الحلقات -->
         <div class="card">
-            <h2>🎬 إضافة ورفع الحلقات (Auto-Upload)</h2>
+            <h2>🎬 إضافة ورفع الحلقات (Streamtape Remote Upload)</h2>
             <label>معرف الأنمي (ID):</label>
             <input type="text" id="epAnimeId" placeholder="مثال: solo">
 
-            <label>معرف المجلد في Streamtape (Folder ID - اختياري):</label>
-            <input type="text" id="streamtapeFolder" placeholder="مثال: f_abc123 (أتركه فارغاً للرئيسي)">
+            <label>معرف المجلد في Streamtape (Folder ID - أتركه فارغاً للرئيسي):</label>
+            <input type="text" id="streamtapeFolder" placeholder="مثال: f_abc123">
 
             <div id="episodesInputsContainer"></div>
 
@@ -405,6 +405,7 @@
             return clean.startsWith("http://") || clean.startsWith("https://");
         }
 
+        // دالة الرفع عبر Streamtape Remote Upload الصحيحة
         async function uploadToStreamtape(fileUrl, fileName, folderId) {
             if (!isValidUrlLine(fileUrl)) return null;
             
@@ -413,7 +414,7 @@
             }
 
             try {
-                let stTarget = `https://api.streamtape.com/file/ul?login=${STREAMTAPE_LOGIN}&key=${STREAMTAPE_KEY}&url=${encodeURIComponent(fileUrl)}`;
+                let stTarget = `https://api.streamtape.com/remotedl/add?login=${STREAMTAPE_LOGIN}&key=${STREAMTAPE_KEY}&url=${encodeURIComponent(fileUrl)}`;
                 if (fileName) stTarget += `&name=${encodeURIComponent(fileName)}`;
                 if (folderId) stTarget += `&folder=${encodeURIComponent(folderId)}`;
 
@@ -421,9 +422,7 @@
                 const data = await res.json();
 
                 if (data.status === 200 && data.result && data.result.id) {
-                    return `https://streamtape.com/e/${data.result.id}`;
-                } else if (data.result && data.result.url) {
-                    return data.result.url;
+                    return `https://stape.me/e/${data.result.id}`;
                 }
                 return null;
             } catch (err) {
